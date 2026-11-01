@@ -1,16 +1,22 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "removeComments": true,
+    "removeComments": false,
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "rootDir": "./src",
     "outDir": "./lib",
     "noImplicitAny": true,
     "skipLibCheck": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "strictNullChecks": true
   },
-  "exclude": ["node_modules"],
-  "include": ["src/**/*.ts"]
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "src/**/*.ts"
+  ]
 }
