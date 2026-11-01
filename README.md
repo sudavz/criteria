@@ -39,7 +39,7 @@ const criteria = Criteria.create({
 
 Operations are actions performed on a field or value, such as comparing values for equality, evaluating logical conditions, or checking whether an item belongs to a list.
 
-#### Comparison Operators
+#### Field Operators
 
 **Basic syntax:**
 
@@ -53,12 +53,15 @@ Operations are actions performed on a field or value, such as comparing values f
 
 | Operator |                       Description                       |
 | :------: | :-----------------------------------------------------: |
+| between  |      Checks if a value is within a specific range       |
+|  isNull  |            Checks if a value is null or not             |
 |  equals  |           Checks that a value equals another            |
 |   diff   |       Checks that a value is not equal to another       |
 |   gte    | Checks that a value is greater than or equal to another |
 |    gt    |       Checks that a value is greater than another       |
 |   lte    |  Checks that a value is less than or equal to another   |
 |    lt    |        Checks that a value is less than another         |
+|    in    | Checks if a value is contained within a list of values  |
 
 **Examples:**
 
@@ -78,55 +81,10 @@ Operations are actions performed on a field or value, such as comparing values f
 }
 ```
 
-#### Logical Operators
-
-**Basic syntax:**
-
-```json
-{
-  "<operator>": ["<expression>", "<expression>", "..."]
-}
-```
-
-| Operator |                  Description                  |
-| :------: | :-------------------------------------------: |
-|   and    |    Evaluates that all conditions are true     |
-|    or    | Evaluates that at least one condition is true |
-
-**Examples:**
-
 ```typescript
 {
-  and: [{ age: { gte: 18 } }, { age: { lte: 60 } }];
-}
-```
-
-```typescript
-{
-  or: [
-    { username: { equals: 'torlvals' } },
-    { username: { equals: 'robCMartin' } },
-  ];
-}
-```
-
-#### Other Operators
-
-| Operator |                      Description                       |
-| :------: | :----------------------------------------------------: |
-|   not    |                 Negates an expression                  |
-|    in    | Checks if a value is contained within a list of values |
-|  isNull  |            Checks if a value is null or not            |
-| between  |       Checks if a value within a specific range        |
-
-**Examples:**
-
-```typescript
-{
-  not: {
-    pilotName: {
-      in: ["leclerc", "hammilton", "alonso", "perez"]
-    }
+  pilotName: {
+   in: ["leclerc", "hammilton", "alonso", "perez"]
   }
 }
 ```
@@ -143,6 +101,33 @@ Operations are actions performed on a field or value, such as comparing values f
 {
   score: {
     between: [1.3, 90];
+  }
+}
+```
+
+#### Logical Operators
+
+| Operator |                  Description                  |
+| :------: | :-------------------------------------------: |
+|   and    |    Evaluates that all conditions are true     |
+|    or    | Evaluates that at least one condition is true |
+|   not    |             Negates an expression             |
+
+**Examples:**
+
+```typescript
+{
+  and: [{ age: { gte: 18 } }, { age: { lte: 60 } }];
+}
+```
+
+```typescript
+{
+  not: {
+    or: [
+      { username: { equals: 'torlvals' } },
+      { username: { equals: 'robCMartin' } },
+    ];
   }
 }
 ```
