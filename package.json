@@ -32,12 +32,12 @@
     "typescript"
   ],
   "scripts": {
-    "build": "tsc",
+    "build:check": "tsc --noEmit",
+    "build:prod": "tsc",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write --config .prettierrc .",
     "prepare:develop": "husky",
-    "prepare": "tsc",
     "lint": "eslint ."
   },
   "types": "./lib/index.d.ts",
