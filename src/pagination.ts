@@ -1,5 +1,3 @@
-import { CursorBase64Serializer } from './cursor-serializers/cursor-base64-serializer.js';
-import type { CursorSerializer } from './cursor-serializers/cursor-serializer.js';
 import InvalidCursorPayload from './exceptions/invalid-cursor-payload.js';
 import InvalidPage from './exceptions/invalid-page.js';
 
@@ -11,6 +9,7 @@ export type CursorPayload = CursorCriterion[];
 
 export default class Pagination {
   private constructor(
+    readonly kind: 'Page' | 'Cursor',
     private readonly page_: number | null,
     private readonly cursor_: CursorPayload | null,
   ) {
@@ -19,18 +18,13 @@ export default class Pagination {
 
   static byPage(page = 1) {
     this.validatePage(page);
-    return new Pagination(page, null);
+    return new Pagination('Page', page, null);
   }
 
-  static byCursor(
-    cursor: unknown,
-    cursorSerializer: CursorSerializer<CursorPayload> = new CursorBase64Serializer(),
-  ) {
-    const decodeCursor = cursorSerializer.decode(cursor);
+  static byCursor(cursor: CursorPayload) {
+    this.validateCursorPayload(cursor);
 
-    this.validateCursorPayload(decodeCursor);
-
-    return new Pagination(null, decodeCursor);
+    return new Pagination('Cursor', null, cursor);
   }
 
   static validatePage(page: number) {
@@ -85,6 +79,7 @@ export default class Pagination {
 
   toObjectPlain() {
     return Object.freeze({
+      kind: this.kind,
       page: this.page_,
       cursor: this.cursor_,
     });

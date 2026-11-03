@@ -4,8 +4,6 @@ import {
   type OrderByRaw,
   type Sort,
 } from './criteria.js';
-import { CursorBase64Serializer } from './cursor-serializers/cursor-base64-serializer.js';
-import type { CursorSerializer } from './cursor-serializers/cursor-serializer.js';
 import CriteriaError from './exceptions/criteria-error.js';
 import InvalidCursorPayload from './exceptions/invalid-cursor-payload.js';
 import InvalidExpression from './exceptions/invalid-expression.js';
@@ -27,7 +25,6 @@ export {
   Ast,
   Criteria,
   CriteriaError,
-  CursorBase64Serializer,
   Grammar,
   InvalidCursorPayload,
   InvalidExpression,
@@ -39,7 +36,6 @@ export {
   type CriteriaOptions,
   type CursorCriterion,
   type CursorPayload,
-  type CursorSerializer,
   type CursorSort,
   type OrderByRaw,
   type Sort,
