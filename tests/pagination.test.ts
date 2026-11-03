@@ -57,31 +57,37 @@ describe('Pagination', () => {
   });
 
   describe('Pagination by cursor', () => {
-    it('should throw an error when cursor criterion has invalid elements', () => {
-      const cursorTest = [[null, null, 'a']];
+    it('should throw an error when cursor criterion has invalid input', () => {
       expect(() => {
-        Pagination.byCursor(cursorTest as any);
+        Pagination.byCursor([[null, null, 'a']] as any);
       }).toThrow(InvalidCursorPayload);
-    });
 
-    it('should throw an error when cursor criterion is not a valid tuple', () => {
-      const cursorTest = [null, {}];
       expect(() => {
-        Pagination.byCursor(cursorTest as any);
+        Pagination.byCursor([null, {}] as any);
       }).toThrow(InvalidCursorPayload);
-    });
 
-    it('should throw an error when cursor payload is an empty array', () => {
-      const cursorTest: any[] = [];
       expect(() => {
-        Pagination.byCursor(cursorTest as any);
+        Pagination.byCursor([{}] as any);
       }).toThrow(InvalidCursorPayload);
-    });
 
-    it('should throw an error when cursor payload is null', () => {
-      const cursorTest = null;
       expect(() => {
-        Pagination.byCursor(cursorTest as any);
+        Pagination.byCursor([] as any);
+      }).toThrow(InvalidCursorPayload);
+
+      expect(() => {
+        Pagination.byCursor(null as any);
+      }).toThrow(InvalidCursorPayload);
+
+      expect(() => {
+        Pagination.byCursor([[1, 1, 'DESC']] as any);
+      }).toThrow(InvalidCursorPayload);
+
+      expect(() => {
+        Pagination.byCursor([[true, false, 'DESC']] as any);
+      }).toThrow(InvalidCursorPayload);
+
+      expect(() => {
+        Pagination.byCursor([['', false, 'DESC']] as any);
       }).toThrow(InvalidCursorPayload);
     });
 
