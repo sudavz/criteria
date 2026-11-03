@@ -48,7 +48,8 @@ export default class Pagination {
     const [field, value, sort] = criterion as unknown[];
 
     if (
-      this.isUndefinedOrNull(field) ||
+      typeof field !== 'string' ||
+      field.trim() === '' ||
       this.isUndefinedOrNull(value) ||
       (sort !== 'DESC' && sort !== 'ASC')
     ) {
@@ -69,6 +70,7 @@ export default class Pagination {
       Object.freeze(element);
     }
   }
+
   get page(): Readonly<number | null> {
     return this.page_;
   }
