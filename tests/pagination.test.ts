@@ -1,8 +1,7 @@
-import Pagination from '../src/pagination';
-import { CursorSerializer } from '../src/cursor-serializers/cursor-serializer';
+import Pagination, { type CursorPayload } from '../src/pagination';
 import InvalidPage from '../src/exceptions/invalid-page';
 import InvalidCursorPayload from '../src/exceptions/invalid-cursor-payload';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('Pagination', () => {
   describe('Pagination by page', () => {
@@ -40,6 +39,7 @@ describe('Pagination', () => {
       const pagination = Pagination.byPage(46);
       expect(pagination).toBeInstanceOf(Pagination);
       expect(pagination.toObjectPlain()).toStrictEqual({
+        kind: 'Page',
         page: 46,
         cursor: null,
       });
@@ -49,6 +49,7 @@ describe('Pagination', () => {
       const pagination = Pagination.byPage();
       expect(pagination).toBeInstanceOf(Pagination);
       expect(pagination.toObjectPlain()).toStrictEqual({
+        kind: 'Page',
         page: 1,
         cursor: null,
       });
@@ -56,94 +57,61 @@ describe('Pagination', () => {
   });
 
   describe('Pagination by cursor', () => {
-    const encode = vi.fn().mockReturnValue('.....');
-    const decode = vi.fn();
-
-    const mockCursorParser: CursorSerializer<any> = { encode, decode };
-
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should throw an error when cursor criterion has invalid elements', () => {
-      decode.mockImplementation((cursor: unknown) => [[null, null, 'a']]);
-      const cursorTest = 'cursor 1';
+      const cursorTest = [[null, null, 'a']];
       expect(() => {
-        Pagination.byCursor(cursorTest, mockCursorParser);
+        Pagination.byCursor(cursorTest as any);
       }).toThrow(InvalidCursorPayload);
-      expect(decode).toHaveBeenCalledWith(cursorTest);
-      expect(decode).toHaveReturnedWith([[null, null, 'a']]);
-      expect(decode).toHaveBeenCalledTimes(1);
     });
 
     it('should throw an error when cursor criterion is not a valid tuple', () => {
-      decode.mockImplementation((cursor: unknown) => [null, {}]);
-      const cursorTest = 'cursor 2';
+      const cursorTest = [null, {}];
       expect(() => {
-        Pagination.byCursor(cursorTest, mockCursorParser);
+        Pagination.byCursor(cursorTest as any);
       }).toThrow(InvalidCursorPayload);
-      expect(decode).toHaveBeenCalledWith(cursorTest);
-      expect(decode).toHaveReturnedWith([null, {}]);
-      expect(decode).toHaveBeenCalledTimes(1);
     });
 
     it('should throw an error when cursor payload is an empty array', () => {
-      decode.mockImplementation((cursor: unknown) => []);
-      const cursorTest = 'cursor 3';
+      const cursorTest: any[] = [];
       expect(() => {
-        Pagination.byCursor(cursorTest, mockCursorParser);
+        Pagination.byCursor(cursorTest as any);
       }).toThrow(InvalidCursorPayload);
-      expect(decode).toHaveBeenCalledWith(cursorTest);
-      expect(decode).toHaveReturnedWith([]);
-      expect(decode).toHaveBeenCalledTimes(1);
     });
 
     it('should throw an error when cursor payload is null', () => {
-      decode.mockImplementation((cursor: unknown) => null);
-      const cursorTest = 'cursor 4';
+      const cursorTest = null;
       expect(() => {
-        Pagination.byCursor(cursorTest, mockCursorParser);
+        Pagination.byCursor(cursorTest as any);
       }).toThrow(InvalidCursorPayload);
-      expect(decode).toHaveBeenCalledWith(cursorTest);
-      expect(decode).toHaveReturnedWith(null);
-      expect(decode).toHaveBeenCalledTimes(1);
     });
 
     it('should create a valid pagination instance with DESC sort', () => {
-      decode.mockImplementation((cursor: unknown) => [
-        ['field', 'value', 'DESC'],
-      ]);
-      const cursorTest = 'cursor 5';
-      const result = Pagination.byCursor(cursorTest, mockCursorParser);
+      const cursorTest: CursorPayload = [['field', 'value', 'DESC']];
+      const result = Pagination.byCursor(cursorTest);
 
       expect(result).toBeInstanceOf(Pagination);
       expect(result.toObjectPlain()).toStrictEqual({
+        kind: 'Cursor',
         page: null,
         cursor: [['field', 'value', 'DESC']],
       });
       expect(result.page).toBeNull();
       expect(result.cursor).toStrictEqual([['field', 'value', 'DESC']]);
-      expect(decode).toHaveBeenCalledWith(cursorTest);
-      expect(decode).toHaveReturnedWith([['field', 'value', 'DESC']]);
-      expect(decode).toHaveBeenCalledTimes(1);
     });
 
     it('should create a valid pagination instance with ASC sort', () => {
-      decode.mockImplementation((cursor: unknown) => [['field', 567, 'ASC']]);
-      const cursorTest = 'cursor 5';
+      const cursorTest: CursorPayload = [['field', 567, 'ASC']];
 
-      const result = Pagination.byCursor(cursorTest, mockCursorParser);
+      const result = Pagination.byCursor(cursorTest);
 
       expect(result).toBeInstanceOf(Pagination);
       expect(result.toObjectPlain()).toStrictEqual({
+        kind: 'Cursor',
         page: null,
         cursor: [['field', 567, 'ASC']],
       });
       expect(result.page).toBeNull();
       expect(result.cursor).toStrictEqual([['field', 567, 'ASC']]);
-      expect(decode).toHaveBeenCalledWith(cursorTest);
-      expect(decode).toHaveReturnedWith([['field', 567, 'ASC']]);
-      expect(decode).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -163,21 +163,13 @@ const criteria = Criteria.create({
 When using cursor-based pagination, `Pagination` relies on the `CursorPayload` type, which represents a list of field criteria with values and sort orders.
 
 ```typescript
-import { type CursorPayload } from '@criteria-ts/core';
+import { Criteria, Pagination, type CursorPayload } from '@criteria-ts/core';
 
-const cursorPayload: CursorPayload = [
+const cursor: CursorPayload = [
   ['createdAt', '1989-02-25 11:56:26.472 -0500', 'DESC'],
   ['username', 'richstallman', 'ASC'],
   ['id', 32, 'DESC'],
 ];
-```
-
-When specifying a cursor, `Criteria` assumes the cursor is serialized and uses a default [serializer](#serializers) to decode it into its canonical `CursorPayload` representation.
-
-```typescript
-import { Criteria, Pagination } from '@criteria-ts/core';
-
-const cursor: string = '...'; // Serialized cursor
 
 const criteria = Criteria.create({
   filter: {
@@ -190,31 +182,9 @@ const criteria = Criteria.create({
 });
 ```
 
-> **Note:** `Pagination` internally uses `CursorBase64Serializer` by default, but you can pass a custom implementation as the second argument to `Pagination.byCursor`.
+> **Note:** If you serialize the cursor before exposing it to external layers, you must remember to deserialize it before constructing your Criteria object.
 
-#### Serializers
-
-When exposing a cursor to a client, a serializer is needed to transport the cursor in an accepted format, such as a base64 encoded string.
-
-```typescript
-import { CursorBase64Serializer, type CursorPayload } from '@criteria-ts/core';
-
-const cursorPayload: CursorPayload = [
-  ['createdAt', '2026-09-24 11:56:26.472 -0500', 'DESC'],
-  ['username', 'deivisss', 'ASC'],
-  ['id', 10, 'DESC'],
-];
-
-const cursorBase64Serializer = new CursorBase64Serializer();
-
-const encodeCursor: string = cursorBase64Serializer.encode(cursorPayload);
-
-const decodeCursor: CursorPayload = cursorBase64Serializer.decode(encodeCursor);
-```
-
-> **Note:** You can implement the `CursorSerializer<K, T>` interface to create custom serializers.
-
-## AST & Visitor Pattern
+## AST interpretation & Visitors
 
 Filter expressions are parsed into an Abstract Syntax Tree (AST) composed of strongly-typed nodes. Each node implements the double-dispatch `accept` method to support AST traversal, interpretation, and transformation into target query formats (such as SQL or query dialect generators).
 

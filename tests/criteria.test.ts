@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { Criteria } from '../src/criteria';
-import { CursorSerializer } from '../src/cursor-serializers/cursor-serializer';
 import InvalidLimit from '../src/exceptions/invalid-limit';
 import InvalidOrderBy from '../src/exceptions/invalid-orderby';
 import InvalidPagination from '../src/exceptions/invalid-pagination';
@@ -48,7 +47,7 @@ describe('Criteria', () => {
           },
         },
       },
-      pagination: { page: 23, cursor: null },
+      pagination: { kind: 'Page', page: 23, cursor: null },
       orderBy: [],
       limit: 23,
     });
@@ -280,15 +279,6 @@ describe('Criteria', () => {
   });
 
   describe('Pagination criteria', () => {
-    const encode = vi.fn().mockReturnValue('.....');
-    const decode = vi.fn();
-
-    const mockCursorParser: CursorSerializer<any> = { encode, decode };
-
-    beforeEach(() => {
-      vi.clearAllMocks();
-    });
-
     it('should pass when pagination and limit are provided', () => {
       const criteria = Criteria.create({
         pagination: Pagination.byPage(14),
@@ -298,7 +288,7 @@ describe('Criteria', () => {
       expect(criteria.pagination).toBeInstanceOf(Pagination);
       expect(criteria.toObjectPlain()).toStrictEqual({
         filterExpression: null,
-        pagination: { page: 14, cursor: null },
+        pagination: { kind: 'Page', page: 14, cursor: null },
         orderBy: [],
         limit: 10,
       });
@@ -306,17 +296,19 @@ describe('Criteria', () => {
     });
 
     it('should pass when pagination (cursor) and limit are provided', () => {
-      decode.mockImplementation((cursor: unknown) => [['id', 23, 'DESC']]);
-
       const criteria = Criteria.create({
-        pagination: Pagination.byCursor('.....', mockCursorParser),
+        pagination: Pagination.byCursor([['id', 23, 'DESC']]),
         limit: 100,
       });
 
       expect(criteria.pagination).toBeInstanceOf(Pagination);
       expect(criteria.toObjectPlain()).toStrictEqual({
         filterExpression: null,
-        pagination: { page: null, cursor: [['id', 23, 'DESC']] },
+        pagination: {
+          kind: 'Cursor',
+          page: null,
+          cursor: [['id', 23, 'DESC']],
+        },
         orderBy: [],
         limit: 100,
       });
