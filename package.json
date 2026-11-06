@@ -63,7 +63,6 @@
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
     "@eslint/js": "^10.0.1",
-    "@swc/jest": "^0.2.39",
     "@types/node": "^22.20.5",
     "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.13.0",
