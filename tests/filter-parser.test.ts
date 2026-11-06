@@ -39,29 +39,15 @@ describe('FilterParser', () => {
   });
 
   describe('Literal expressions', () => {
-    it('should parse a valid LiteralExpression', () => {
-      expect(FilterParser.parse(null)).toMatchObject({
-        kind: 'LiteralNode',
-        value: null,
-      });
-      expect(FilterParser.parse(123)).toMatchObject({
-        kind: 'LiteralNode',
-        value: 123,
-      });
-
-      expect(FilterParser.parse(true)).toMatchObject({
-        kind: 'LiteralNode',
-        value: true,
-      });
-      expect(FilterParser.parse(false)).toMatchObject({
-        kind: 'LiteralNode',
-        value: false,
-      });
-      expect(FilterParser.parse("somebody's watching me")).toMatchObject({
-        kind: 'LiteralNode',
-        value: "somebody's watching me",
-      });
-    });
+    it.for([null, 123, true, false, "somebody's watching me"])(
+      'should parse %s as a LiteralNode',
+      (input) => {
+        expect(FilterParser.parse(input)).toMatchObject({
+          kind: 'LiteralNode',
+          value: input,
+        });
+      },
+    );
   });
 
   describe('Array expressions', () => {
@@ -88,84 +74,39 @@ describe('FilterParser', () => {
       });
     });
 
-    it('should throw InvalidExpression', () => {
-      expect(() => FilterParser.parse([() => {}, () => {}] as any)).toThrow(
-        InvalidExpression,
-      );
-
-      expect(() => FilterParser.parse([{}] as any)).toThrow(InvalidExpression);
-
-      expect(() => FilterParser.parse([undefined, undefined] as any)).toThrow(
-        InvalidExpression,
-      );
-
-      expect(() => FilterParser.parse([new Date()] as any)).toThrow(
-        InvalidExpression,
-      );
-
-      expect(() =>
-        FilterParser.parse([{ name: { equals: 'David' } }] as any),
-      ).toThrow(InvalidExpression);
-      expect(() =>
-        FilterParser.parse([{ not: { x: { equals: 2 } } }] as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse([
-          { not: { y: { gt: 2 } } },
-          { a: { in: [1, 3, 4, 5] } },
-        ] as any),
-      ).toThrow(InvalidExpression);
-    });
+    it.for([
+      [() => {}, () => {}],
+      [{}],
+      [undefined, undefined],
+      [new Date()],
+      [{ name: { equals: 'David' } }],
+      [{ not: { x: { equals: 2 } } }],
+      [{ not: { y: { gt: 2 } } }, { a: { in: [1, 3, 4, 5] } }],
+    ])(
+      'should throw InvalidExpression when array contains %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
   });
 
   describe('logical expressions (and / or)', () => {
-    it('should throw InvalidExpression when logical array is empty', () => {
-      const badExpression = {
-        and: [],
-      };
-      expect(() => FilterParser.parse(badExpression)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when logical array has fewer than two elements', () => {
-      const badExpression = {
-        not: {
-          or: [true],
-        },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when logical array contains an empty object', () => {
-      const badExpression = {
-        and: [{}, 1],
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when logical operand is an object instead of array', () => {
-      const badExpression = {
-        and: {},
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when logical operand is null', () => {
-      const badExpression = {
-        and: null,
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
+    it.for([
+      { and: [] },
+      { not: { or: [true] } },
+      { and: [{}, 1] },
+      { and: {} },
+      { and: null },
+    ])(
+      'should throw InvalidExpression when logical expression is %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
 
     it('should parse an or expression with multiple conditions', () => {
       const expression: Expression = {
@@ -208,14 +149,23 @@ describe('FilterParser', () => {
   });
 
   describe('comparison expressions', () => {
-    it('should throw InvalidExpression when comparison operand is an empty object', () => {
-      const badExpression = {
-        dog: { equals: {} },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
+    it.for([
+      { dog: { equals: {} } },
+      { age: { gt: 10, lt: 20 } },
+      { score: { gt: true } },
+      { some: { lt: {} } },
+      { 1: { gt: () => {} } },
+      { username: { gt: {} } },
+      { cat: { diff: [() => {}, undefined] } },
+      { age: { badOperator: {} } },
+    ])(
+      'should throw InvalidExpression when comparison expression is %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
 
     it('should parse an equals expression with an array operand', () => {
       expect(
@@ -249,175 +199,61 @@ describe('FilterParser', () => {
       });
     });
 
-    it('should throw InvalidExpression when a field contains more than one operator', () => {
-      const badExpression = {
-        age: { gt: 10, lt: 20 },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when greater or less operator is boolean', () => {
-      const badExpression = {
-        score: { gt: true },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when lt operator is an empty object', () => {
-      const badExpression = {
-        some: { lt: {} },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when gt operator is a function', () => {
-      const badExpression = {
-        1: { gt: () => {} },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when gt operator is an empty object', () => {
-      const badExpression = {
-        username: {
-          gt: {},
-        },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when comparison operands contain invalid types', () => {
-      const badExpression = {
-        cat: { diff: [() => {}, undefined] },
-      };
-
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should parse a comparison between two fields', () => {
-      const result = FilterParser.parse({
-        startDate: { lte: '$endDate' },
-      });
-
-      expect(result).toMatchObject({
-        kind: 'ComparisonNode',
-        left: { kind: 'FieldNode', value: 'startDate' },
+    it.for([
+      {
+        input: { startDate: { lte: '$endDate' } },
+        field: 'startDate',
         operator: '<=',
         right: { kind: 'FieldNode', value: 'endDate' },
-      });
-    });
-
-    it('should parse a comparison with greater than or equal operator', () => {
-      const result = FilterParser.parse({
-        rate: { gte: 23 },
-      });
-
-      expect(result).toMatchObject({
-        kind: 'ComparisonNode',
-        left: { kind: 'FieldNode', value: 'rate' },
+      },
+      {
+        input: { rate: { gte: 23 } },
+        field: 'rate',
         operator: '>=',
         right: { kind: 'LiteralNode', value: 23 },
-      });
-    });
-
-    it('should parse a comparison with less than or equal operator', () => {
-      const result = FilterParser.parse({
-        name: { lte: 'another day in paradise' },
-      });
-
-      expect(result).toMatchObject({
-        kind: 'ComparisonNode',
-        left: { kind: 'FieldNode', value: 'name' },
+      },
+      {
+        input: { name: { lte: 'another day in paradise' } },
+        field: 'name',
         operator: '<=',
         right: { kind: 'LiteralNode', value: 'another day in paradise' },
-      });
-    });
-
-    it('should throw InvalidExpression when an invalid operator is provided', () => {
-      const badExpression = {
-        age: { badOperator: {} },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
+      },
+    ])(
+      'should parse comparison with operator $operator for field $field',
+      ({ input, field, operator, right }) => {
+        const result = FilterParser.parse(input);
+        expect(result).toMatchObject({
+          kind: 'ComparisonNode',
+          left: { kind: 'FieldNode', value: field },
+          operator,
+          right,
+        });
+      },
+    );
   });
 
   describe('not expressions', () => {
-    it('should throw InvalidExpression when not expression is an empty object', () => {
-      const badExpression = {
-        not: {},
-      };
-      expect(() => FilterParser.parse(badExpression)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when not expression is a function', () => {
-      const badExpression = {
-        not: () => {},
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when not expression is true', () => {
-      const badExpression = {
-        not: true,
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when not expression is 1', () => {
-      const badExpression = {
-        not: 1,
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when not expression is array', () => {
-      const badExpression = {
-        not: [1, 2, '3', '5', true, 'turing'],
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when not expression is undefined', () => {
-      const badExpression = {
-        not: undefined,
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when not expression is null', () => {
-      const badExpression = {
-        not: null,
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
+    it.for([
+      {},
+      () => {},
+      true,
+      false,
+      1,
+      3,
+      3.4,
+      -1,
+      [1, 2, '3', '5', true, 'turing'],
+      undefined,
+      null,
+      new Date(),
+    ])(
+      'should throw InvalidExpression when not expression receive %s',
+      (expression) => {
+        expect(() => FilterParser.parse({ not: expression } as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
 
     it('should parse a valid not expression wrapping a comparison', () => {
       const expression: Expression = {
@@ -457,62 +293,21 @@ describe('FilterParser', () => {
   });
 
   describe('in expressions', () => {
-    it('should throw InvalidExpression when in array is empty', () => {
-      const badExpression = {
-        role: { in: [] },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when in operand contains invalid values', () => {
-      const badExpression = {
-        in: [() => {}, null],
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when in array contains complex expressions', () => {
-      const badExpression = {
-        role: { in: [{ and: [true, true] }] },
-      };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when in target is an invalid expression', () => {
-      const badExpression = {
-        in: [{ and: [true, true] }, [1, 2]],
-      };
-
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when in array contains an invalid nested element', () => {
-      const badExpression = {
-        some: { in: [1, [1, 2, 1, 1, {}]] },
-      };
-
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
-
-    it('should throw InvalidExpression when in array contains invalid expressions', () => {
-      const badExpression = {
-        some: { in: [() => {}, { user: 'daaa' }] },
-      };
-
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
-        InvalidExpression,
-      );
-    });
+    it.for([
+      { role: { in: [] } },
+      { in: [() => {}, null] },
+      { role: { in: [{ and: [true, true] }] } },
+      { in: [{ and: [true, true] }, [1, 2]] },
+      { some: { in: [1, [1, 2, 1, 1, {}]] } },
+      { some: { in: [() => {}, { user: 'daaa' }] } },
+    ])(
+      'should throw InvalidExpression when in expression is %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
 
     it('should parse a valid in expression with a field and literal list', () => {
       const expression: Expression = {
@@ -613,82 +408,45 @@ describe('FilterParser', () => {
       });
     });
 
-    it('should throw InvalidExpression when field reference is only a dollar sign', () => {
-      const expression: Expression = {
-        indira_: { equals: '$' },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
-
-    it('should throw InvalidExpression when field starts with dollar sign', () => {
-      const expression: Expression = {
-        '$%4f_': { equals: 'wtf' },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
-
-    it('should throw InvalidExpression when field starts with percentage sign', () => {
-      const expression: Expression = {
-        '%4f_e_t': { gt: 3.14159 },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
-
-    it('should throw InvalidExpression when field starts with a number', () => {
-      const expression: Expression = {
-        '34_test': { gt: 0.57721 },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
-
-    it('should throw InvalidExpression when field starts with @', () => {
-      const expression: Expression = {
-        '@_l': { in: [0.57721, 3.14159] },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
-
-    it('should throw InvalidExpression when field contains "" or spaces', () => {
-      const expression: Expression = {
-        '"="" OR "': { equals: 'SQLi' },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
-
-    it('should throw InvalidExpression when field reference contains invalid characters', () => {
-      const expression: Expression = {
-        paganotto: { equals: '$s&?da34' },
-      };
-
-      expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
-    });
+    it.for([
+      { indira_: { equals: '$' } },
+      { '$%4f_': { equals: 'wtf' } },
+      { '%4f_e_t': { gt: 3.14159 } },
+      { '34_test': { gt: 0.57721 } },
+      { '@_l': { in: [0.57721, 3.14159] } },
+      { '"="" OR "': { equals: 'SQLi' } },
+      { paganotto: { equals: '$s&?da34' } },
+    ])(
+      'should throw InvalidExpression when field identifier is invalid in %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
   });
 
   describe('IsNull expression', () => {
-    it('should pass with valid isNull expression', () => {
-      expect(FilterParser.parse({ infinite: { isNull: true } })).toMatchObject({
-        kind: 'IsNullNode',
+    it.for([
+      {
+        input: { infinite: { isNull: true } },
+        field: 'infinite',
         isNull: true,
-        value: {
-          kind: 'FieldNode',
-          value: 'infinite',
-        },
-      });
-      expect(FilterParser.parse({ fear: { isNull: false } })).toMatchObject({
-        kind: 'IsNullNode',
-        isNull: false,
-        value: {
-          kind: 'FieldNode',
-          value: 'fear',
-        },
-      });
-    });
+      },
+      { input: { fear: { isNull: false } }, field: 'fear', isNull: false },
+    ])(
+      'should parse isNull expression for field $field with isNull=$isNull',
+      ({ input, field, isNull }) => {
+        expect(FilterParser.parse(input)).toMatchObject({
+          kind: 'IsNullNode',
+          isNull,
+          value: {
+            kind: 'FieldNode',
+            value: field,
+          },
+        });
+      },
+    );
     it('should parse a not expression wrapping an isNull expression', () => {
       expect(
         FilterParser.parse({ not: { email: { isNull: true } } }),
@@ -701,128 +459,77 @@ describe('FilterParser', () => {
         },
       });
     });
-    it('should throw InvalidExpression with non-boolean value', () => {
-      expect(() => FilterParser.parse({ love: { isNull: 1 } } as any)).toThrow(
-        InvalidExpression,
-      );
-      expect(() =>
-        FilterParser.parse({ feelings: { isNull: 'true' } as any }),
-      ).toThrow(InvalidExpression);
-      expect(() =>
-        FilterParser.parse({ hate: { isNull: () => {} } } as any),
-      ).toThrow(InvalidExpression);
-      expect(() =>
-        FilterParser.parse({ blame: { isNull: null } as any }),
-      ).toThrow(InvalidExpression);
-      expect(() =>
-        FilterParser.parse({ money: { isNull: undefined } as any }),
-      ).toThrow(InvalidExpression);
-    });
+    it.for([
+      { love: { isNull: 1 } },
+      { feelings: { isNull: 'true' } },
+      { hate: { isNull: () => {} } },
+      { blame: { isNull: null } },
+      { money: { isNull: undefined } },
+    ])(
+      'should throw InvalidExpression when isNull receives non-boolean in %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
   });
 
   describe('Between expression', () => {
-    it('should pass with between expression valid', () => {
-      expect(
-        FilterParser.parse({
-          score: { between: [100, '$max_score'] },
-        }),
-      ).toMatchObject({
-        kind: 'BetweenNode',
-        value: {
-          kind: 'FieldNode',
-          value: 'score',
-        },
-        start: {
-          kind: 'LiteralNode',
-          value: 100,
-        },
-        end: {
-          kind: 'FieldNode',
-          value: 'max_score',
-        },
-      });
+    it.for([
+      {
+        input: { score: { between: [100, '$max_score'] } },
+        field: 'score',
+        start: { kind: 'LiteralNode', value: 100 },
+        end: { kind: 'FieldNode', value: 'max_score' },
+      },
+      {
+        input: { age: { between: [18, 30] } },
+        field: 'age',
+        start: { kind: 'LiteralNode', value: 18 },
+        end: { kind: 'LiteralNode', value: 30 },
+      },
+      {
+        input: { score: { between: ['$min_score', '$max_score'] } },
+        field: 'score',
+        start: { kind: 'FieldNode', value: 'min_score' },
+        end: { kind: 'FieldNode', value: 'max_score' },
+      },
+    ])(
+      'should parse between expression for field $field',
+      ({ input, field, start, end }) => {
+        expect(FilterParser.parse(input)).toMatchObject({
+          kind: 'BetweenNode',
+          value: { kind: 'FieldNode', value: field },
+          start,
+          end,
+        });
+      },
+    );
 
-      expect(FilterParser.parse({ age: { between: [18, 30] } })).toMatchObject({
-        kind: 'BetweenNode',
-        value: {
-          kind: 'FieldNode',
-          value: 'age',
-        },
-        start: {
-          kind: 'LiteralNode',
-          value: 18,
-        },
-        end: {
-          kind: 'LiteralNode',
-          value: 30,
-        },
-      });
-
-      expect(
-        FilterParser.parse({
-          score: { between: ['$min_score', '$max_score'] },
-        }),
-      ).toMatchObject({
-        kind: 'BetweenNode',
-        value: {
-          kind: 'FieldNode',
-          value: 'score',
-        },
-        start: {
-          kind: 'FieldNode',
-          value: 'min_score',
-        },
-        end: {
-          kind: 'FieldNode',
-          value: 'max_score',
-        },
-      });
-    });
-
-    it('should throw InvalidExpression', () => {
-      expect(() =>
-        FilterParser.parse({ age: { between: null } } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse({ age: { between: [{}, () => {}] } } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse({ age: { between: [true, () => {}] } } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse({ age: { between: [undefined, undefined] } } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() => FilterParser.parse({ age: { between: [] } } as any)).toThrow(
-        InvalidExpression,
-      );
-
-      expect(() =>
-        FilterParser.parse({ age: { between: [1] } } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse({
-          date: { between: [new Date('1999-01-01'), new Date('2020-01-01')] },
-        } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse({
-          date: {
-            between: [{ not: { result: { equals: 'fail' } } }, 1],
-          },
-        } as any),
-      ).toThrow(InvalidExpression);
-
-      expect(() =>
-        FilterParser.parse({
-          date: { between: [3, [1, 2, 3, 4]] },
-        } as any),
-      ).toThrow(InvalidExpression);
-    });
+    it.for([
+      { age: { between: null } },
+      { age: { between: [{}, () => {}] } },
+      { age: { between: [true, () => {}] } },
+      { age: { between: [undefined, undefined] } },
+      { age: { between: [] } },
+      { age: { between: [1] } },
+      {
+        date: { between: [new Date('1999-01-01'), new Date('2020-01-01')] },
+      },
+      {
+        between: [{ not: { result: { equals: 'fail' } } }, 1],
+      },
+      {
+        date: { between: [3, [1, 2, 3, 4]] },
+      },
+    ])(
+      'should throw InvalidExpression when between expression is %s',
+      (expression) => {
+        expect(() => FilterParser.parse(expression as any)).toThrow(
+          InvalidExpression,
+        );
+      },
+    );
   });
 });

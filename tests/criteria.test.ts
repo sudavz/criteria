@@ -18,6 +18,15 @@ describe('Criteria', () => {
     const criteriPlainObject = criteria.toObjectPlain();
 
     expect(criteria).toBeInstanceOf(Criteria);
+    expect(criteria.limit).toBe(23);
+    expect(criteria.pagination).toBeInstanceOf(Pagination);
+    expect(criteria.pagination?.toObjectPlain()).toStrictEqual({
+      kind: 'Page',
+      page: 23,
+      cursor: null,
+    });
+    expect(criteria.orderBy).toEqual([]);
+    expect(criteria.orderBy).toHaveLength(0);
     expect(criteriPlainObject).toMatchObject({
       filterExpression: {
         kind: 'LogicalNode',
@@ -63,6 +72,10 @@ describe('Criteria', () => {
     const criteriPlainObject = criteria.toObjectPlain();
 
     expect(criteria).toBeInstanceOf(Criteria);
+    expect(criteria.limit).toBeNull();
+    expect(criteria.pagination).toBeNull();
+    expect(criteria.orderBy).toEqual([]);
+    expect(criteria.orderBy).toHaveLength(0);
     expect(criteriPlainObject).toMatchObject({
       filterExpression: {
         kind: 'ComparisonNode',
@@ -88,6 +101,10 @@ describe('Criteria', () => {
     const criteriaPlainObject = criteria.toObjectPlain();
 
     expect(criteria).toBeInstanceOf(Criteria);
+    expect(criteria.limit).toBeNull();
+    expect(criteria.pagination).toBeNull();
+    expect(criteria.orderBy).toEqual([]);
+    expect(criteria.orderBy).toHaveLength(0);
     expect(criteriaPlainObject).toStrictEqual({
       filterExpression: null,
       pagination: null,
@@ -97,246 +114,153 @@ describe('Criteria', () => {
   });
 
   describe('Limit criteria', () => {
-    it('should throw an error when limit is negative', () => {
-      expect(() => Criteria.create({ limit: -1 })).toThrow(InvalidLimit);
-      expect(() => Criteria.create({ limit: -431 })).toThrow(InvalidLimit);
-      expect(() => Criteria.create({ limit: -3000000 })).toThrow(InvalidLimit);
+    it.for([
+      -1,
+      -431,
+      Infinity,
+      -Infinity,
+      1003.32,
+      467.32,
+      -1.32,
+      0,
+      'hello!!',
+      'hello world',
+      true,
+      false,
+      {},
+      () => {},
+      new Date(),
+    ])('should throw InvalidLimit when limit is $0', (limit) => {
+      expect(() => Criteria.create({ limit } as any)).toThrow(InvalidLimit);
     });
 
-    it('should throw an error when limit is Infinity', () => {
-      expect(() => Criteria.create({ limit: Infinity })).toThrow(InvalidLimit);
-      expect(() => Criteria.create({ limit: -Infinity })).toThrow(InvalidLimit);
-    });
-
-    it('should throw an error when limit is decimal', () => {
-      expect(() => Criteria.create({ limit: 1003.32 })).toThrow(InvalidLimit);
-      expect(() => Criteria.create({ limit: 467.32 })).toThrow(InvalidLimit);
-      expect(() => Criteria.create({ limit: -1.32 })).toThrow(InvalidLimit);
-    });
-
-    it('should throw an error when limit is zero', () => {
-      expect(() => Criteria.create({ limit: 0 })).toThrow(InvalidLimit);
-    });
-
-    it('should throw an error when limit is not a number', () => {
-      expect(() => Criteria.create({ limit: 'hello!!' as any })).toThrow(
-        InvalidLimit,
-      );
-
-      expect(() => Criteria.create({ limit: {} as any })).toThrow(InvalidLimit);
-
-      expect(() => Criteria.create({ limit: true as any })).toThrow(
-        InvalidLimit,
-      );
-    });
-
-    it('should pass when limit is an integer greater than or equal to 1', () => {
-      expect(Criteria.create({ limit: 1 }).limit).toBe(1);
-      expect(Criteria.create({ limit: 43 }).limit).toBe(43);
-      expect(Criteria.create({ limit: 50 }).limit).toBe(50);
-      expect(Criteria.create({ limit: 100 }).limit).toBe(100);
-      expect(Criteria.create({ limit: 1200 }).limit).toBe(1200);
-    });
-
-    it('should pass when limit is null', () => {
-      expect(Criteria.create({ limit: null }).limit).toBeNull();
+    it.for([
+      { limit: null, expected: null },
+      { limit: undefined, expected: null },
+      { limit: 1, expected: 1 },
+      { limit: 2, expected: 2 },
+      { limit: 34, expected: 34 },
+      { limit: 50, expected: 50 },
+      { limit: 60, expected: 60 },
+      { limit: 603, expected: 603 },
+      { limit: 30e4, expected: 30e4 },
+      { limit: 90e23, expected: 90e23 },
+    ])('should pass when limit is $limit', ({ limit, expected }) => {
+      expect(Criteria.create({ limit }).limit).toBe(expected);
     });
   });
 
-  describe('OrderBy criteria', () => {
-    it('should pass when empty array is provided', () => {
-      const criteria = Criteria.create({ orderBy: [] });
-      expect(criteria.orderBy).toStrictEqual([]);
-    });
-
-    it('should pass when array with valid tuples is provided', () => {
-      expect(
-        Criteria.create({ orderBy: [['name', 'DESC']] }).orderBy,
-      ).toStrictEqual([['name', 'DESC']]);
-
-      expect(
-        Criteria.create({ orderBy: [['username', 'ASC']] }).orderBy,
-      ).toStrictEqual([['username', 'ASC']]);
-
-      expect(
-        Criteria.create({
-          orderBy: [
-            ['age', 'DESC'],
-            ['createdAt', 'ASC'],
-          ],
-        }).orderBy,
-      ).toStrictEqual([
-        ['age', 'DESC'],
-        ['createdAt', 'ASC'],
-      ]);
-    });
-
-    it('should throw an error when orderBy is not an array', () => {
-      expect(() => Criteria.create({ orderBy: '[[]]' as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: 344 as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: true as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: false as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: (() => {}) as any })).toThrow(
-        InvalidOrderBy,
+  describe('orderBy criteria', () => {
+    it.for([
+      { orderBy: [] as any[] },
+      { orderBy: [['name', 'DESC']] },
+      { orderBy: [['username', 'ASC']] },
+      {
+        orderBy: [
+          ['age', 'DESC'],
+          ['createdAt', 'ASC'],
+        ],
+      },
+    ])('should pass when orderBy is $orderBy', ({ orderBy }) => {
+      expect(Criteria.create({ orderBy } as any).orderBy).toStrictEqual(
+        orderBy,
       );
     });
 
-    it('should throw an error when orderBy criterion is not an array', () => {
-      expect(() => Criteria.create({ orderBy: ['[[]]'] as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: [344, null] as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: [true] as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: [false] as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() => Criteria.create({ orderBy: [() => {}] as any })).toThrow(
-        InvalidOrderBy,
-      );
-    });
-
-    it('should throw an error when criterion is an invalid tuple', () => {
-      expect(() =>
-        Criteria.create({ orderBy: [[null, 'DSec']] as any }),
-      ).toThrow(InvalidOrderBy);
-
-      expect(() =>
-        Criteria.create({ orderBy: [['null', null]] as any }),
-      ).toThrow(InvalidOrderBy);
-
-      expect(() => Criteria.create({ orderBy: [[]] as any })).toThrow(
-        InvalidOrderBy,
-      );
-
-      expect(() =>
-        Criteria.create({
-          orderBy: [
-            ['field', 'DESC'],
-            ['field', 'ASC'],
-            ['field', 34],
-          ] as any,
-        }),
-      ).toThrow(InvalidOrderBy);
-
-      expect(() =>
-        Criteria.create({
-          orderBy: [
-            ['field', 'DESC'],
-            ['field', 'ASC'],
-            ['field', 'ASI'],
-          ] as any,
-        }),
-      ).toThrow(InvalidOrderBy);
-
-      expect(() =>
-        Criteria.create({
-          orderBy: [['field', 'DESC'], ['field', 'ASC'], ['ASI']] as any,
-        }),
-      ).toThrow(InvalidOrderBy);
-
-      expect(() =>
-        Criteria.create({
-          orderBy: [['field', null, 'DESC', '2', true]] as any,
-        }),
-      ).toThrow(InvalidOrderBy);
-
-      expect(() =>
-        Criteria.create({
-          orderBy: [['field', 'ASC', 'DESC', '2', true]] as any,
-        }),
-      ).toThrow(InvalidOrderBy);
-    });
-
-    it('should throw an error when field is not a valid string', () => {
-      expect(() => Criteria.create({ orderBy: [[2, 'ASC']] as any })).toThrow(
-        InvalidOrderBy,
-      );
-      expect(() =>
-        Criteria.create({ orderBy: [[true, 'ASC']] as any }),
-      ).toThrow(InvalidOrderBy);
-      expect(() =>
-        Criteria.create({ orderBy: [[false, 'ASC']] as any }),
-      ).toThrow(InvalidOrderBy);
-      expect(() =>
-        Criteria.create({ orderBy: [[null, 'ASC']] as any }),
-      ).toThrow(InvalidOrderBy);
-      expect(() =>
-        Criteria.create({ orderBy: [[() => {}, 'ASC']] as any }),
-      ).toThrow(InvalidOrderBy);
+    it.for([
+      '[[]]',
+      344,
+      344,
+      true,
+      false,
+      () => {},
+      ['[[]]'],
+      [344, null],
+      [true],
+      [false],
+      [() => {}],
+      [[null, 'DSec']],
+      [['null', null]],
+      [[]],
+      [
+        ['field', 'DESC'],
+        ['field', 'ASC'],
+        ['field', 34],
+      ],
+      [
+        ['field', 'DESC'],
+        ['field', 'ASC'],
+        ['field', 'ASI'],
+      ],
+      [['field', 'DESC'], ['field', 'ASC'], ['ASI']],
+      [['field', null, 'DESC', '2', true]],
+      [['field', 'ASC', 'DESC', '2', true]],
+      [[2, 'ASC']],
+      [[true, 'ASC']],
+      [[false, 'ASC']],
+      [[null, 'ASC']],
+      [[() => {}, 'ASC']],
+      [['id', 23, 'DESC', 'extra1', 'extra2', 'extra3', 'extra4']],
+    ])('should throw InvalidOrderBy when orderBy is %s', (orderBy) => {
+      expect(() => Criteria.create({ orderBy } as any)).toThrow(InvalidOrderBy);
     });
   });
 
   describe('Pagination criteria', () => {
-    it('should pass when pagination and limit are provided', () => {
-      const criteria = Criteria.create({
-        pagination: Pagination.byPage(14),
-        limit: 10,
-      });
+    it.for([
+      { pagination: Pagination.byPage(14), limit: 10 },
+      { pagination: Pagination.byPage(34), limit: 100 },
+      { pagination: Pagination.byPage(32345), limit: 103 },
+      { pagination: Pagination.byPage(234544), limit: 343434 },
+      { pagination: Pagination.byCursor([['id', 1, 'ASC']]), limit: 103 },
+      { pagination: Pagination.byCursor([['id', 3, 'DESC']]), limit: 23788 },
+    ])(
+      'should pass when pagination is $pagination and limit is $limit',
+      ({ pagination, limit }) => {
+        const criteria = Criteria.create({
+          pagination,
+          limit,
+        });
 
-      expect(criteria.pagination).toBeInstanceOf(Pagination);
-      expect(criteria.toObjectPlain()).toStrictEqual({
-        filterExpression: null,
-        pagination: { kind: 'Page', page: 14, cursor: null },
-        orderBy: [],
-        limit: 10,
-      });
-      expect(criteria.limit).toBe(10);
-    });
+        expect(criteria.pagination).toBeInstanceOf(Pagination);
+        expect(criteria.toObjectPlain()).toStrictEqual({
+          filterExpression: null,
+          pagination: pagination.toObjectPlain(),
+          orderBy: [],
+          limit,
+        });
+        expect(criteria.limit).toBe(limit);
+      },
+    );
 
-    it('should pass when pagination (cursor) and limit are provided', () => {
-      const criteria = Criteria.create({
-        pagination: Pagination.byCursor([['id', 23, 'DESC']]),
-        limit: 100,
-      });
-
-      expect(criteria.pagination).toBeInstanceOf(Pagination);
-      expect(criteria.toObjectPlain()).toStrictEqual({
-        filterExpression: null,
-        pagination: {
-          kind: 'Cursor',
-          page: null,
-          cursor: [['id', 23, 'DESC']],
-        },
-        orderBy: [],
-        limit: 100,
-      });
-      expect(criteria.limit).toBe(100);
-    });
-
-    it('should throw an error when pagination is provided without limit', () => {
-      expect(() =>
-        Criteria.create({ pagination: Pagination.byPage(34) }),
-      ).toThrow(InvalidPagination);
-      expect(() =>
-        Criteria.create({ pagination: Pagination.byPage(45) }),
-      ).toThrow(InvalidPagination);
-    });
-
-    it('should throw an error when invalid pagination is provided', () => {
-      expect(() => Criteria.create({ pagination: 1 as any })).toThrow(
-        InvalidPagination,
-      );
-      expect(() =>
-        Criteria.create({ pagination: 'pagination' as any }),
-      ).toThrow(InvalidPagination);
-      expect(() => Criteria.create({ pagination: true as any })).toThrow(
-        InvalidPagination,
-      );
-      expect(() => Criteria.create({ pagination: false as any })).toThrow(
-        InvalidPagination,
-      );
-    });
+    it.for([
+      { pagination: Pagination.byPage(34), limit: undefined },
+      { pagination: Pagination.byPage(45), limit: undefined },
+      { pagination: Pagination.byPage(34), limit: null },
+      { pagination: Pagination.byPage(45), limit: null },
+      {
+        pagination: Pagination.byCursor([['field', 0, 'ASC']]),
+        limit: undefined,
+      },
+      {
+        pagination: Pagination.byCursor([['field', 0, 'ASC']]),
+        limit: null,
+      },
+      { pagination: 'pagination', limit: 2 },
+      { pagination: true, limit: 3 },
+      { pagination: false, limit: 4 },
+      { pagination: () => {}, limit: 4 },
+      { pagination: { test: 'test' }, limit: 4 },
+      { pagination: new Date(), limit: 4 },
+      { pagination: new Map([['hello', 'world']]), limit: 4 },
+      { pagination: [[]], limit: 4 },
+    ])(
+      'should throw InvalidPagination when pagination is $pagination and limit is $limit',
+      ({ pagination, limit }) => {
+        expect(() => Criteria.create({ pagination, limit } as any)).toThrow(
+          InvalidPagination,
+        );
+      },
+    );
   });
 });
