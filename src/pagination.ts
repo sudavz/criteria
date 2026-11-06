@@ -38,9 +38,9 @@ export default class Pagination {
   }
 
   private static validateCursorCriterion(criterion: unknown) {
-    if (!Array.isArray(criterion)) {
+    if (!Array.isArray(criterion) || criterion.length != 3) {
       throw new InvalidCursorPayload(
-        'criterion must be a non-empty array',
+        'criterion must be a non-empty array with field name, value and sort',
         criterion,
       );
     }
