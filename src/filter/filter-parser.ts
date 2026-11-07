@@ -33,6 +33,24 @@ const mapLogicalOperator: Record<
   or: '||',
 };
 
+const nodesWithBooleanReturn = new Set<string>([
+  'LogicalNode',
+  'ComparisonNode',
+  'InNode',
+  'NotNode',
+  'FieldNode',
+  'IsNullNode',
+  'BetweenNode',
+]);
+
+const nodesValidInArrayNode = new Set<string>([
+  'LiteralNode',
+  'FieldNode',
+  'ArrayNode',
+]);
+
+const literalTypesValids = new Set<string>(['string', 'number', 'boolean']);
+
 const idExpressionRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
@@ -46,10 +64,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   }
 
   // Literal expressions
-  if (
-    input === null ||
-    ['string', 'number', 'boolean'].includes(typeof input)
-  ) {
+  if (input === null || literalTypesValids.has(typeof input)) {
     return buildLiteralNode(input as Grammar.LiteralExpression);
   }
 
@@ -59,11 +74,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
 
     for (const item of input) {
       const expression = parse(item);
-      if (
-        expression.kind !== 'LiteralNode' &&
-        expression.kind !== 'FieldNode' &&
-        expression.kind !== 'ArrayNode'
-      ) {
+      if (!nodesValidInArrayNode.has(expression.kind)) {
         throw new InvalidExpression(
           'The Array expression requires a LiteralExpression, ArrayExpression, or FieldExpression',
           input,
@@ -71,7 +82,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
       }
       items.push(expression);
     }
-    return buildArrayNode(items);
+    return buildArrayNode(items as Ast.ArrayNode['items']);
   }
 
   if (typeof input != 'object') {
@@ -111,15 +122,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
 
     for (const expressionInput of expressionsInput) {
       const expression = parse(expressionInput);
-      if (
-        expression.kind !== 'LogicalNode' &&
-        expression.kind !== 'ComparisonNode' &&
-        expression.kind !== 'InNode' &&
-        expression.kind !== 'NotNode' &&
-        expression.kind !== 'FieldNode' &&
-        expression.kind !== 'IsNullNode' &&
-        expression.kind !== 'BetweenNode'
-      ) {
+      if (!nodesWithBooleanReturn.has(expression.kind)) {
         throw new InvalidExpression(
           'The LogicExpression requires valid expressions',
           input,
@@ -138,24 +141,16 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   if (key === 'not') {
     const expressionInput = (input as Grammar.NotExpression<T>)['not'];
 
-    const expression: Ast.ExpressionNode = parse(expressionInput);
+    const expression = parse(expressionInput);
 
-    if (
-      expression.kind !== 'FieldNode' &&
-      expression.kind !== 'ComparisonNode' &&
-      expression.kind !== 'LogicalNode' &&
-      expression.kind !== 'NotNode' &&
-      expression.kind !== 'InNode' &&
-      expression.kind !== 'IsNullNode' &&
-      expression.kind !== 'BetweenNode'
-    ) {
+    if (!nodesWithBooleanReturn.has(expression.kind)) {
       throw new InvalidExpression(
         `The NOT expression requires a valid expression`,
         input,
       );
     }
 
-    return buildNotNode(expression);
+    return buildNotNode(expression as Ast.NotNode['expression']);
   }
 
   validateFieldExpression(key);
@@ -174,14 +169,10 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
 
   // Comparison operators
   if (
-    operator === 'equals' ||
-    operator === 'diff' ||
-    operator === 'gt' ||
-    operator === 'lt' ||
-    operator === 'gte' ||
-    operator === 'lte'
+    typeof mapComparisonOperator[operator as Grammar.ComparisonOperator] ===
+    'string'
   ) {
-    const expressionInput = operation[operator];
+    const expressionInput = operation[operator as Grammar.ComparisonOperator];
 
     if (expressionInput === undefined) {
       throw new InvalidExpression(
@@ -205,7 +196,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
     }
     return buildComparisonNode(
       buildFieldNode(key),
-      mapComparisonOperator[operator],
+      mapComparisonOperator[operator as Grammar.ComparisonOperator],
       parse(expressionInput),
     );
   }
