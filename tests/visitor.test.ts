@@ -135,13 +135,10 @@ describe('Visitor suit test', () => {
     },
   ];
 
-  it.for(input)(
-    'should pass with BetweenNode with $description',
-    ({ node, visitMethod }) => {
-      expect(node.accept(visitorTest)).toEqual(node.kind);
-      expect(() => node.accept({} as any)).toThrow(TypeError);
-      expect(visitMethod).toHaveBeenCalledOnce();
-      expect(visitMethod).toHaveBeenCalledWith(node);
-    },
-  );
+  it.for(input)('should pass with $description', ({ node, visitMethod }) => {
+    expect(node.accept(visitorTest)).toEqual(node.kind);
+    expect(() => node.accept({} as any)).toThrow(TypeError);
+    expect(visitMethod).toHaveBeenCalledOnce();
+    expect(visitMethod).toHaveBeenCalledWith(node);
+  });
 });

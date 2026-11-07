@@ -498,7 +498,7 @@ describe('FilterParser', () => {
     ])(
       'should parse between expression for field $field',
       ({ input, field, start, end }) => {
-        expect(FilterParser.parse(input)).toMatchObject({
+        expect(FilterParser.parse(input as any)).toMatchObject({
           kind: 'BetweenNode',
           value: { kind: 'FieldNode', value: field },
           start,
