@@ -19,6 +19,8 @@ const mapComparisonOperator: Record<
 > = {
   equals: '==',
   diff: '!=',
+  eq: '==',
+  ne: '!=',
   gt: '>',
   lt: '<',
   gte: '>=',

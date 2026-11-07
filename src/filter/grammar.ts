@@ -7,6 +7,14 @@ type StringAndNumberValid<T> = T extends string | number
 export type ComparisonOperand<T> = Partial<{
   equals: T;
   diff: T;
+  /**
+   * @description experimental alias to **equals**
+   */
+  eq: T;
+  /**
+   * @description experimental alias to **diff**
+   */
+  ne: T;
   lte: StringAndNumberValid<T>;
   lt: StringAndNumberValid<T>;
   gte: StringAndNumberValid<T>;

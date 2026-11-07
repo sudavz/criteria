@@ -167,38 +167,6 @@ describe('FilterParser', () => {
       },
     );
 
-    it('should parse an equals expression with an array operand', () => {
-      expect(
-        FilterParser.parse({
-          phoneNumbers: { equals: ['+56 30000000', '+51 70000000'] },
-        }),
-      ).toMatchObject({
-        kind: 'ComparisonNode',
-        left: {
-          kind: 'FieldNode',
-          value: 'phoneNumbers',
-        },
-        right: {
-          kind: 'ArrayNode',
-        },
-      });
-    });
-
-    it('should parse an equals expression with a literal operand', () => {
-      const badExpression = {
-        genere: { equals: 'techno' },
-      };
-      expect(FilterParser.parse(badExpression)).toMatchObject({
-        kind: 'ComparisonNode',
-        left: {
-          kind: 'FieldNode',
-        },
-        right: {
-          kind: 'LiteralNode',
-        },
-      });
-    });
-
     it.for([
       {
         input: { startDate: { lte: '$endDate' } },
@@ -217,6 +185,63 @@ describe('FilterParser', () => {
         field: 'name',
         operator: '<=',
         right: { kind: 'LiteralNode', value: 'another day in paradise' },
+      },
+      {
+        input: { field: { eq: '$field2' } },
+        field: 'field',
+        operator: '==',
+        right: { kind: 'FieldNode', value: 'field2' },
+      },
+      {
+        input: {
+          phoneNumbers: { equals: ['+56 30000000', '+51 70000000'] },
+        },
+        field: 'phoneNumbers',
+        operator: '==',
+        right: {
+          kind: 'ArrayNode',
+          items: [
+            {
+              kind: 'LiteralNode',
+              value: '+56 30000000',
+            },
+            {
+              kind: 'LiteralNode',
+              value: '+51 70000000',
+            },
+          ],
+        },
+      },
+
+      {
+        input: { username: { equals: 'jaax' } },
+        field: 'username',
+        operator: '==',
+        right: { kind: 'LiteralNode', value: 'jaax' },
+      },
+      {
+        input: { username: { diff: 'pomni' } },
+        field: 'username',
+        operator: '!=',
+        right: { kind: 'LiteralNode', value: 'pomni' },
+      },
+      {
+        input: { username: { ne: 'pomni' } },
+        field: 'username',
+        operator: '!=',
+        right: { kind: 'LiteralNode', value: 'pomni' },
+      },
+      {
+        input: { points: { lt: 32.64 } },
+        field: 'points',
+        operator: '<',
+        right: { kind: 'LiteralNode', value: 32.64 },
+      },
+      {
+        input: { points: { gt: 32.64 } },
+        field: 'points',
+        operator: '>',
+        right: { kind: 'LiteralNode', value: 32.64 },
       },
     ])(
       'should parse comparison with operator $operator for field $field',
