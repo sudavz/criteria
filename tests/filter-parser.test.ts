@@ -99,6 +99,9 @@ describe('FilterParser', () => {
       { and: [{}, 1] },
       { and: {} },
       { and: null },
+      { and: [false, false, 1, 3] },
+      { and: [new Date(), { x: { equals: 1 } }] },
+      { and: [false, false, 1, 3] },
     ])(
       'should throw InvalidExpression when logical expression is %s',
       (expression) => {
@@ -108,44 +111,89 @@ describe('FilterParser', () => {
       },
     );
 
-    it('should parse an or expression with multiple conditions', () => {
-      const expression: Expression = {
-        or: [
-          { role: { equals: 'admin' } },
-          { role: { equals: 'editor' } },
-          { role: { equals: 'viewer' } },
-        ],
-      };
+    const expressionNested = [
+      { role: { equals: 'admin' } },
+      { points: { lt: 2 } },
+      { not: { points: { in: [1] } } },
+    ];
 
-      const result = FilterParser.parse(expression);
+    const nodeNested = [
+      {
+        kind: 'ComparisonNode',
+        left: { kind: 'FieldNode', value: 'role' },
+        operator: '==',
+        right: { kind: 'LiteralNode', value: 'admin' },
+      },
+      {
+        kind: 'ComparisonNode',
+        left: { kind: 'FieldNode', value: 'points' },
+        operator: '<',
+        right: { kind: 'LiteralNode', value: 2 },
+      },
+      {
+        kind: 'NotNode',
+        expression: {
+          kind: 'InNode',
+          value: {
+            kind: 'FieldNode',
+            value: 'points',
+          },
+          arrayExpression: {
+            kind: 'ArrayNode',
+            items: [
+              {
+                kind: 'LiteralNode',
+                value: 1,
+              },
+            ],
+          },
+        },
+      },
+    ];
 
-      expect(result).toMatchObject({
-        kind: 'LogicalNode',
+    const input = [
+      {
+        input: {
+          or: expressionNested,
+        },
         operator: '||',
-        left: {
+        nodeNested,
+      },
+      {
+        input: {
+          and: expressionNested,
+        },
+        operator: '&&',
+        nodeNested,
+      },
+      {
+        input: {
+          ...expressionNested[0],
+          ...expressionNested[1],
+          ...expressionNested[2],
+        },
+        operator: '&&',
+        nodeNested,
+      },
+    ];
+
+    it.for(input)(
+      'should parse logic expression with $input',
+      ({ input, operator, nodeNested }) => {
+        const result = FilterParser.parse(input as any);
+        expect(result).toMatchObject({
           kind: 'LogicalNode',
-          operator: '||',
           left: {
-            kind: 'ComparisonNode',
-            left: { kind: 'FieldNode', value: 'role' },
-            operator: '==',
-            right: { kind: 'LiteralNode', value: 'admin' },
+            kind: 'LogicalNode',
+            left: nodeNested[0],
+            operator,
+            right: nodeNested[1],
           },
-          right: {
-            kind: 'ComparisonNode',
-            left: { kind: 'FieldNode', value: 'role' },
-            operator: '==',
-            right: { kind: 'LiteralNode', value: 'editor' },
-          },
-        },
-        right: {
-          kind: 'ComparisonNode',
-          left: { kind: 'FieldNode', value: 'role' },
-          operator: '==',
-          right: { kind: 'LiteralNode', value: 'viewer' },
-        },
-      });
-    });
+          operator,
+          right: nodeNested[2],
+        });
+      },
+    );
   });
 
   describe('comparison expressions', () => {

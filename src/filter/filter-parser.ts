@@ -93,188 +93,199 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
 
   const keys = Object.keys(input);
 
-  if (keys.length != 1) {
+  if (keys.length === 0)
     throw new InvalidExpression(
-      'Object is not valid; it must contain only one key',
+      'Object is not valid; it must contain at least one key',
       input,
     );
-  }
 
-  const key = keys[0];
+  const rootNodes: Ast.LogicalNode['left'][] = [];
 
-  // Logic operators
+  for (const key of keys) {
+    // Logic operators
 
-  if (key === 'and' || key === 'or') {
-    const expressionsInput = (input as Grammar.LogicalExpression<T>)[key];
+    if (key === 'and' || key === 'or') {
+      const expressionsInput = (input as Grammar.LogicalExpression<T>)[key];
 
-    if (!Array.isArray(expressionsInput))
-      throw new InvalidExpression(
-        `The Logic expression must be an array of expressions.`,
-        input,
-      );
-
-    if (expressionsInput.length <= 1) {
-      throw new InvalidExpression(
-        'The Logic expression must contain at least two arguments.',
-        input,
-      );
-    }
-
-    const expressions: Ast.LogicalNode['left'][] = [];
-
-    for (const expressionInput of expressionsInput) {
-      const expression = parse(expressionInput);
-      if (!nodesWithBooleanReturn.has(expression.kind)) {
+      if (!Array.isArray(expressionsInput))
         throw new InvalidExpression(
-          'The LogicExpression requires valid expressions',
+          `The Logic expression must be an array of expressions.`,
+          input,
+        );
+
+      if (expressionsInput.length <= 1) {
+        throw new InvalidExpression(
+          'The Logic expression must contain at least two arguments.',
           input,
         );
       }
-      expressions.push(expression);
-    }
 
-    return expressions.reduce((le, re) =>
-      buildLogicalNode(le, mapLogicalOperator[key], re),
-    );
-  }
+      const expressions: Ast.LogicalNode['left'][] = [];
 
-  // Not expression
+      for (const expressionInput of expressionsInput) {
+        const expression = parse(expressionInput);
+        if (!nodesWithBooleanReturn.has(expression.kind)) {
+          throw new InvalidExpression(
+            'The LogicExpression requires valid expressions',
+            input,
+          );
+        }
+        expressions.push(expression);
+      }
 
-  if (key === 'not') {
-    const expressionInput = (input as Grammar.NotExpression<T>)['not'];
-
-    const expression = parse(expressionInput);
-
-    if (!nodesWithBooleanReturn.has(expression.kind)) {
-      throw new InvalidExpression(
-        `The NOT expression requires a valid expression`,
-        input,
+      rootNodes.push(
+        expressions.reduce((le, re) =>
+          buildLogicalNode(le, mapLogicalOperator[key], re),
+        ),
       );
+      continue;
     }
 
-    return buildNotNode(expression as Ast.NotNode['expression']);
-  }
+    // Not expression
 
-  validateFieldExpression(key);
+    if (key === 'not') {
+      const expressionInput = (input as Grammar.NotExpression<T>)['not'];
 
-  const operation = (input as T)[
-    key
-  ] as Grammar.RightSideOperand<Grammar.LiteralExpression>;
+      const expression = parse(expressionInput);
 
-  const keysOperation = Object.keys(operation ?? {});
+      if (!nodesWithBooleanReturn.has(expression.kind)) {
+        throw new InvalidExpression(
+          `The NOT expression requires a valid expression`,
+          input,
+        );
+      }
 
-  if (keysOperation.length !== 1) {
-    throw new InvalidExpression('The field requires an operand', input);
-  }
-
-  const operator: string = keysOperation[0];
-
-  // Comparison operators
-  if (
-    typeof mapComparisonOperator[operator as Grammar.ComparisonOperator] ===
-    'string'
-  ) {
-    const expressionInput = operation[operator as Grammar.ComparisonOperator];
-
-    if (expressionInput === undefined) {
-      throw new InvalidExpression(
-        'The value in Comparison expression is invalid',
-        input,
-      );
+      rootNodes.push(buildNotNode(expression as Ast.NotNode['expression']));
+      continue;
     }
 
+    validateFieldExpression(key);
+
+    const operation = (input as T)[
+      key
+    ] as Grammar.RightSideOperand<Grammar.LiteralExpression>;
+
+    const keysOperation = Object.keys(operation ?? {});
+
+    if (keysOperation.length !== 1) {
+      throw new InvalidExpression('The field requires an operand', input);
+    }
+
+    const operator: string = keysOperation[0];
+
+    // Comparison operators
     if (
-      (operator === 'gt' ||
-        operator === 'gte' ||
-        operator === 'lt' ||
-        operator === 'lte') &&
-      typeof expressionInput !== 'number' &&
-      typeof expressionInput !== 'string'
+      typeof mapComparisonOperator[operator as Grammar.ComparisonOperator] ===
+      'string'
     ) {
-      throw new InvalidExpression(
-        'The Comparison expression with greater and less operators requires number or string values',
-        input,
+      const expressionInput = operation[operator as Grammar.ComparisonOperator];
+
+      if (expressionInput === undefined) {
+        throw new InvalidExpression(
+          'The value in Comparison expression is invalid',
+          input,
+        );
+      }
+
+      if (
+        (operator === 'gt' ||
+          operator === 'gte' ||
+          operator === 'lt' ||
+          operator === 'lte') &&
+        typeof expressionInput !== 'number' &&
+        typeof expressionInput !== 'string'
+      ) {
+        throw new InvalidExpression(
+          'The Comparison expression with greater and less operators requires number or string values',
+          input,
+        );
+      }
+      rootNodes.push(
+        buildComparisonNode(
+          buildFieldNode(key),
+          mapComparisonOperator[operator as Grammar.ComparisonOperator],
+          parse(expressionInput),
+        ),
       );
+      continue;
     }
-    return buildComparisonNode(
-      buildFieldNode(key),
-      mapComparisonOperator[operator as Grammar.ComparisonOperator],
-      parse(expressionInput),
-    );
+
+    // In expression
+    if (operator === 'in') {
+      const arrayInput = operation[operator];
+
+      if (!Array.isArray(arrayInput) || arrayInput.length === 0) {
+        throw new InvalidExpression(
+          'The Array expression in IN expression must contain at least one item',
+          input,
+        );
+      }
+
+      const arrayNode = parse(arrayInput);
+
+      if (arrayNode.kind !== 'ArrayNode') {
+        throw new InvalidExpression(
+          'The IN expression must contain an array of literal or field expressions.',
+          arrayNode,
+        );
+      }
+
+      rootNodes.push(buildInNode(buildFieldNode(key), arrayNode));
+      continue;
+    }
+
+    // IsNull expression
+    if (operator === 'isNull') {
+      const isNullValue = operation[operator];
+
+      if (typeof isNullValue !== 'boolean') {
+        throw new InvalidExpression(
+          'The IsNull expression must contain a boolean value',
+          input,
+        );
+      }
+
+      const field = buildFieldNode(key);
+
+      rootNodes.push(buildIsNullNode(isNullValue, field));
+      continue;
+    }
+
+    // Between expression
+    if (operator === 'between') {
+      const betweenValue = operation[operator];
+
+      if (!Array.isArray(betweenValue) || betweenValue.length !== 2) {
+        throw new InvalidExpression(
+          'The between expression must contain a array with start and end values',
+          input,
+        );
+      }
+
+      const leftExpression = parse(betweenValue[0]);
+      const rightExpression = parse(betweenValue[1]);
+
+      if (
+        (leftExpression.kind !== 'LiteralNode' &&
+          leftExpression.kind !== 'FieldNode') ||
+        (rightExpression.kind !== 'LiteralNode' &&
+          rightExpression.kind !== 'FieldNode')
+      ) {
+        throw new InvalidExpression(
+          'The left or right expression must be a LiteralExpression or FieldExpression',
+        );
+      }
+
+      rootNodes.push(
+        buildBetweenNode(buildFieldNode(key), leftExpression, rightExpression),
+      );
+      continue;
+    }
+
+    throw new InvalidExpression('The input expression is invalid', input);
   }
 
-  // In expression
-  if (operator === 'in') {
-    const arrayInput = operation[operator];
-
-    if (!Array.isArray(arrayInput) || arrayInput.length === 0) {
-      throw new InvalidExpression(
-        'The Array expression in IN expression must contain at least one item',
-        input,
-      );
-    }
-
-    const arrayNode = parse(arrayInput);
-
-    if (arrayNode.kind !== 'ArrayNode') {
-      throw new InvalidExpression(
-        'The IN expression must contain an array of literal or field expressions.',
-        arrayNode,
-      );
-    }
-
-    return buildInNode(buildFieldNode(key), arrayNode);
-  }
-
-  // IsNull expression
-  if (operator === 'isNull') {
-    const isNullValue = operation[operator];
-
-    if (typeof isNullValue !== 'boolean') {
-      throw new InvalidExpression(
-        'The IsNull expression must contain a boolean value',
-        input,
-      );
-    }
-
-    const field = buildFieldNode(key);
-
-    return buildIsNullNode(isNullValue, field);
-  }
-
-  // Between expression
-  if (operator === 'between') {
-    const betweenValue = operation[operator];
-
-    if (!Array.isArray(betweenValue) || betweenValue.length !== 2) {
-      throw new InvalidExpression(
-        'The between expression must contain a array with start and end values',
-        input,
-      );
-    }
-
-    const leftExpression = parse(betweenValue[0]);
-    const rightExpression = parse(betweenValue[1]);
-
-    if (
-      (leftExpression.kind !== 'LiteralNode' &&
-        leftExpression.kind !== 'FieldNode') ||
-      (rightExpression.kind !== 'LiteralNode' &&
-        rightExpression.kind !== 'FieldNode')
-    ) {
-      throw new InvalidExpression(
-        'The left or right expression must be a LiteralExpression or FieldExpression',
-      );
-    }
-
-    return buildBetweenNode(
-      buildFieldNode(key),
-      leftExpression,
-      rightExpression,
-    );
-  }
-
-  throw new InvalidExpression('The input expression is invalid', input);
+  return rootNodes.reduce((le, re) => buildLogicalNode(le, '&&', re));
 }
 
 function validateFieldExpression(field: string) {
