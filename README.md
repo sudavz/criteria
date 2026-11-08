@@ -51,17 +51,20 @@ Operations are actions performed on a field or value, such as comparing values f
 
 > **Note:** To reference another field as a value, prefix the string with `$`, e.g., `"$username"`
 
-| Operator |                       Description                       |
-| :------: | :-----------------------------------------------------: |
-| between  |      Checks if a value is within a specific range       |
-|  isNull  |            Checks if a value is null or not             |
-|  equals  |           Checks that a value equals another            |
-|   diff   |       Checks that a value is not equal to another       |
-|   gte    | Checks that a value is greater than or equal to another |
-|    gt    |       Checks that a value is greater than another       |
-|   lte    |  Checks that a value is less than or equal to another   |
-|    lt    |        Checks that a value is less than another         |
-|    in    | Checks if a value is contained within a list of values  |
+| Operator  |                                              Description                                              |
+| :-------: | :---------------------------------------------------------------------------------------------------: |
+| `between` |                             Checks if a value is within a specific range                              |
+| `isNull`  |                                   Checks if a value is null or not                                    |
+| `equals`  |                                  Checks that a value equals another                                   |
+|  `diff`   |                              Checks that a value is not equal to another                              |
+|   `eq`    |                Checks that a value equals another. **Experimental alias to** `equals`                 |
+|   `ne`    |             Checks that a value is not equal to another. **Experimental alias to** `diff`             |
+|   `gte`   |                        Checks that a value is greater than or equal to another                        |
+|   `gt`    |                              Checks that a value is greater than another                              |
+|   `lte`   |                         Checks that a value is less than or equal to another                          |
+|   `lt`    |                               Checks that a value is less than another                                |
+|   `in`    |                        Checks if a value is contained within a list of values                         |
+|   `nin`   | Checks if a value is not contained within a list of values. **Experimental shorthand to negate** `in` |
 
 **Examples:**
 
