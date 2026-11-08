@@ -382,6 +382,24 @@ describe('FilterParser', () => {
       },
     );
 
+    it('should parse a valid in expression with nin abreviation to negate in expression', () => {
+      const expression: Expression = {
+        cat: { nin: ['dog', 'cat'] },
+      };
+
+      const resultParse = FilterParser.parse(expression);
+      expect(resultParse).toMatchObject({
+        kind: 'NotNode',
+        expression: {
+          kind: 'InNode',
+          value: {
+            kind: 'FieldNode',
+            value: 'cat',
+          },
+        },
+      });
+    });
+
     it('should parse a valid in expression with a field and literal list', () => {
       const expression: Expression = {
         cat: { in: ['dog', 'cat'] },

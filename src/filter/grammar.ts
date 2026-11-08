@@ -31,9 +31,35 @@ export type ComparisonExpression<T> = Partial<{
 
 export type ArrayExpression = (LiteralExpression | ArrayExpression)[];
 
-export interface InOperand {
+export type InOperand = Partial<{
   in: ArrayExpression;
-}
+  /**
+   * Experimental shorthand to negate an `in` expression,
+   * aligned with the MongoDB syntax.
+   *
+   * @remarks
+   * This API is experimental: it may change or be removed without notice.
+   * Its formal inclusion is being considered to align with the MongoDB syntax.
+   *
+   * @example
+   * ```ts
+   * // with not/in
+   * {
+   *   not: {
+   *     y: { in: [1, 2, 3, 4] },
+   *   },
+   * }
+   *
+   * // equivalent with nin
+   * {
+   *   y: { nin: [1, 2, 3, 4] },
+   * }
+   * ```
+   *
+   * @experimental
+   */
+  nin: ArrayExpression;
+}>;
 
 export type InExpression<T> = Partial<{
   [K in keyof T]: InOperand;
