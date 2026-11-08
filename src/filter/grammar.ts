@@ -8,11 +8,23 @@ export type ComparisonOperand<T> = Partial<{
   equals: T;
   diff: T;
   /**
-   * @description experimental alias to **equals**
+   * Experimental alias to `equals` operator,
+   * aligned with the MongoDB syntax.
+   *
+   * @remarks
+   * This API is experimental: it may change or be removed without notice.
+   * Its formal inclusion is being considered to align with the MongoDB syntax.
+   * @experimental
    */
   eq: T;
   /**
-   * @description experimental alias to **diff**
+   * Experimental alias to `diff` operator,
+   * aligned with the MongoDB syntax.
+   *
+   * @remarks
+   * This API is experimental: it may change or be removed without notice.
+   * Its formal inclusion is being considered to align with the MongoDB syntax.
+   * @experimental
    */
   ne: T;
   lte: StringAndNumberValid<T>;
