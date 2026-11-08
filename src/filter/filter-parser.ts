@@ -211,7 +211,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
     }
 
     // In expression
-    if (operator === 'in') {
+    if (operator === 'in' || operator === 'nin') {
       const arrayInput = operation[operator];
 
       if (!Array.isArray(arrayInput) || arrayInput.length === 0) {
@@ -229,8 +229,9 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
           arrayNode,
         );
       }
+      const inNode = buildInNode(buildFieldNode(key), arrayNode);
 
-      rootNodes.push(buildInNode(buildFieldNode(key), arrayNode));
+      rootNodes.push(operator === 'nin' ? buildNotNode(inNode) : inNode);
       continue;
     }
 
