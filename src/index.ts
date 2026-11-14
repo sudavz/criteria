@@ -13,6 +13,8 @@ import InvalidPage from './exceptions/invalid-page.js';
 import InvalidPagination from './exceptions/invalid-pagination.js';
 import * as Ast from './filter/ast.js';
 import * as Grammar from './filter/grammar.js';
+import { validateFieldExpression } from './filter/validate-field-expression.js';
+
 import type { Visitor } from './filter/visitor.js';
 import type {
   CursorCriterion,
@@ -33,6 +35,7 @@ export {
   InvalidPage,
   InvalidPagination,
   Pagination,
+  validateFieldExpression,
   type CriteriaOptions,
   type CursorCriterion,
   type CursorPayload,
