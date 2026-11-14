@@ -187,7 +187,7 @@ const criteria = Criteria.create({
 
 > **Note:** If you serialize the cursor before exposing it to external layers, you must remember to deserialize it before constructing your Criteria object.
 
-## AST interpretation & Visitors
+## Filter interpretation
 
 Filter expressions are parsed into an Abstract Syntax Tree (AST) composed of strongly-typed nodes. Each node implements the double-dispatch `accept` method to support AST traversal, interpretation, and transformation into target query formats (such as SQL or query dialect generators).
 
@@ -205,59 +205,6 @@ export interface Visitor<T = void> {
   visitIsNullNode(isNullNode: IsNullNode): T;
   visitBetweenNode(betweenNode: BetweenNode): T;
 }
-```
-
-#### Example Usage
-
-```typescript
-import { Criteria, type Ast, type Visitor } from '@criteria-ts/core';
-
-class CustomExampleVisitor implements Visitor<string> {
-  visitLiteralNode(node: Ast.LiteralNode): string {
-    return `${node.value}`;
-  }
-
-  visitFieldNode(node: Ast.FieldNode): string {
-    return node.value;
-  }
-
-  visitComparisonNode(node: Ast.ComparisonNode): string {
-    return `${node.left.accept(this)} ${node.operator} ${node.right.accept(this)}`;
-  }
-
-  visitLogicalNode(node: Ast.LogicalNode): string {
-    return `(${node.left.accept(this)} ${node.operator} ${node.right.accept(this)})`;
-  }
-
-  visitNotNode(node: Ast.NotNode): string {
-    return `NOT (${node.expression.accept(this)})`;
-  }
-
-  visitArrayNode(node: Ast.ArrayNode): string {
-    return `[${node.items.map((item) => item.accept(this)).join(', ')}]`;
-  }
-
-  visitInNode(node: Ast.InNode): string {
-    return `${node.value.accept(this)} IN ${node.arrayExpression.accept(this)}`;
-  }
-
-  visitIsNullNode(node: Ast.IsNullNode): string {
-    return `${node.value.accept(this)} IS ${node.isNull ? 'NULL' : 'NOT NULL'}`;
-  }
-
-  visitBetweenNode(node: Ast.BetweenNode): string {
-    return `${node.value.accept(this)} IN RANGE(${node.start.accept(this)}  ${node.end.accept(this)})`;
-  }
-}
-
-const criteria = Criteria.create({
-  filter: {
-    mood: { equals: 'focused' },
-  },
-});
-
-const visitor = new CustomExampleVisitor();
-const result = criteria.filterExpression?.accept(visitor);
 ```
 
 > **Note:** All AST node interfaces extend the base `Node` interface and are available under the `Ast` namespace.
