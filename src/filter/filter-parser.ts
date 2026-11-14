@@ -12,6 +12,7 @@ import {
   buildNotNode,
 } from './node-builders.js';
 import * as Grammar from './grammar.js';
+import { validateFieldExpression } from './validate-field-expression.js';
 
 const mapComparisonOperator: Record<
   Grammar.ComparisonOperator,
@@ -52,9 +53,6 @@ const nodesValidInArrayNode = new Set<string>([
 ]);
 
 const literalTypesValids = new Set<string>(['string', 'number', 'boolean']);
-
-const idExpressionRegex =
-  /^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
 
 export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   input: Grammar.Expression<T>,
@@ -288,13 +286,4 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   }
 
   return rootNodes.reduce((le, re) => buildLogicalNode(le, '&&', re));
-}
-
-function validateFieldExpression(field: string) {
-  if (!idExpressionRegex.test(field)) {
-    throw new InvalidExpression(
-      `The field expression provided is invalid`,
-      field,
-    );
-  }
 }
