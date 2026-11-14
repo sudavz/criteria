@@ -53,7 +53,8 @@ const nodesValidInArrayNode = new Set<string>([
 
 const literalTypesValids = new Set<string>(['string', 'number', 'boolean']);
 
-const idExpressionRegex = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+const idExpressionRegex =
+  /^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
 
 export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   input: Grammar.Expression<T>,

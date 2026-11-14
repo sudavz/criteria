@@ -454,65 +454,81 @@ describe('FilterParser', () => {
   });
 
   describe('field identifier expressions', () => {
-    it('should parse a field identifier as the target of an in operator', () => {
-      const expression: Expression = {
-        cat: { in: ['dog', 'cat'] },
-      };
-
-      const resultParse = FilterParser.parse(expression);
-      expect(resultParse).toMatchObject({
-        kind: 'InNode',
-        value: {
-          kind: 'FieldNode',
-          value: 'cat',
+    it.for([
+      {
+        input: { field: { eq: '$_column1' } },
+        expected: {
+          kind: 'ComparisonNode',
+          left: { kind: 'FieldNode', value: 'field' },
+          right: { kind: 'FieldNode', value: '_column1' },
         },
-      });
-    });
-
-    it('should parse a valid field reference matching identifier regex', () => {
-      const expression: Expression = {
-        t3s_t: { equals: '$_sd_a_3_4' },
-      };
-      const resultParse = FilterParser.parse(expression);
-
-      expect(resultParse).toMatchObject({
-        kind: 'ComparisonNode',
-      });
-    });
-
-    it('should parse a direct value', () => {
-      const resultParse = FilterParser.parse('$username');
-      expect(resultParse).toMatchObject({
-        kind: 'FieldNode',
-        value: 'username',
-      });
-    });
-
-    it('should parse a valid field name matching identifier regex', () => {
-      const expression: Expression = {
-        _3st: { equals: 'clean_code' },
-      };
-      const resultParse = FilterParser.parse(expression);
-
-      expect(resultParse).toMatchObject({
-        kind: 'ComparisonNode',
-      });
+      },
+      {
+        input: {
+          _3st: { equals: '....' },
+        },
+        expected: {
+          kind: 'ComparisonNode',
+          left: { kind: 'FieldNode', value: '_3st' },
+        },
+      },
+      {
+        input: {
+          user_23: { equals: '...' },
+        },
+        expected: {
+          kind: 'ComparisonNode',
+          left: { kind: 'FieldNode', value: 'user_23' },
+        },
+      },
+      {
+        input: '$username_02',
+        expected: { kind: 'FieldNode', value: 'username_02' },
+      },
+      {
+        input: '$_3st',
+        expected: { kind: 'FieldNode', value: '_3st' },
+      },
+      {
+        input: '$t3s_t',
+        expected: { kind: 'FieldNode', value: 't3s_t' },
+      },
+      {
+        input: '$username',
+        expected: { kind: 'FieldNode', value: 'username' },
+      },
+      {
+        input: '$field1.field2.field_3',
+        expected: { kind: 'FieldNode', value: 'field1.field2.field_3' },
+      },
+    ])('should parse a valid field with $input', ({ input, expected }) => {
+      const resultParse = FilterParser.parse(input as any);
+      expect(resultParse).toMatchObject(expected);
     });
 
     it.for([
-      { indira_: { equals: '$' } },
-      { '$%4f_': { equals: 'wtf' } },
-      { '%4f_e_t': { gt: 3.14159 } },
-      { '34_test': { gt: 0.57721 } },
-      { '@_l': { in: [0.57721, 3.14159] } },
-      { '"="" OR "': { equals: 'SQLi' } },
-      { paganotto: { equals: '$s&?da34' } },
+      '$',
+      '$%4f_',
+      '$%4f_e_t',
+      '$34_test',
+      '$@_l',
+      '$s&?da34',
+      '$field1.field2...',
+      '$field1.field2.',
+      '$field..',
+      '$field1..field2',
+      '$field1.field2..',
+      { '"="" OR "': { eq: '....' } },
+      { some: { eq: '$"="" OR "' } },
+      { 'some1.some_2.': { eq: '....' } },
+      { 'f1.f2..': { eq: '....' } },
+      { 'f1..f2': { eq: '....' } },
+      { 'some1.1some': { eq: '....' } },
+      { 'some1.$23some': { eq: '....' } },
     ])(
-      'should throw InvalidExpression when field identifier is invalid in %s',
+      'should throw InvalidExpression when field identifier is %s',
       (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
-          InvalidExpression,
-        );
+        expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
       },
     );
   });
