@@ -31,6 +31,17 @@
     "type-safe",
     "typescript"
   ],
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "onFail": "error",
+      "version": "^22.22.1 || ^24.0.0 || ^26.0.0"
+    },
+    "packageManager": {
+      "name": "npm",
+      "onFail": "error"
+    }
+  },
   "scripts": {
     "build:check": "tsc --noEmit",
     "build:prod": "tsc",
@@ -38,7 +49,7 @@
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write --config .prettierrc .",
     "prepare:develop": "husky",
-    "lint": "eslint ."
+    "lint": "eslint --config eslint.config.mjs \"src/**/*.ts\""
   },
   "types": "./lib/index.d.ts",
   "exports": {
@@ -62,7 +73,6 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.4",
-    "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.5",
     "@vitest/coverage-v8": "^5.1.0",
     "eslint": "^10.14.0",
