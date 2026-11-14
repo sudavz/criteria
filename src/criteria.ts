@@ -38,15 +38,6 @@ export class Criteria<
     Object.freeze(this);
   }
 
-  /**
-   * @deprecated use Criteria.create instead
-   */
-  static build<
-    T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
-  >(criteriaOptions: CriteriaOptions<NoInfer<T>> = {}) {
-    return Criteria.create<T>(criteriaOptions);
-  }
-
   static create<
     T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
   >(criteriaOptions: CriteriaOptions<NoInfer<T>> = {}) {
