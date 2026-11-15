@@ -10,13 +10,33 @@ type OrderBy = Map<string, Sort>;
 
 export type Sort = 'ASC' | 'DESC';
 
-export type OrderByRaw<T> = [T extends object ? keyof T : string, Sort][];
+export type OrderByRaw<T> =
+  | [T extends object ? keyof T : string, Sort][]
+  | Partial<Record<T extends object ? keyof T : string, Sort>>
+  | Map<T extends object ? keyof T : string, Sort>;
 
 export interface CriteriaOptions<
   T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
 > {
   filter?: Expression<T> | null;
   pagination?: Pagination | null;
+  /**
+   * Sorts by the listed fields, in priority order.
+   *
+   * @remarks
+   * Accepts an object, array of pairs, or Map. Use `ASC` or `DESC` for each field.
+   * Objects may reorder numeric field names; use an array or Map to preserve
+   * their priority. Repeated field names in an array throw `InvalidOrderBy`.
+   *
+   * @example
+   * ```typescript
+   * type Fields = { id: number; name: string };
+   *
+   * const withObject: OrderByRaw<Fields> = { id: 'DESC', name: 'ASC' };
+   * const withArray: OrderByRaw<Fields> = [['id', 'DESC'], ['name', 'ASC']];
+   * const withMap: OrderByRaw<Fields> = new Map(withArray);
+   * ```
+   */
   orderBy?: OrderByRaw<T> | null;
   limit?: number | null;
 }
@@ -56,13 +76,24 @@ export class Criteria<
   }
 
   private validateOrderBy(orderBy: OrderByRaw<T>): OrderBy {
-    if (!Array.isArray(orderBy)) {
-      throw new InvalidOrderBy('The orderBy must be an array', orderBy);
+    let orderBy_: [string, unknown][] = [];
+
+    if (Array.isArray(orderBy)) {
+      orderBy_ = orderBy;
+    } else if (orderBy instanceof Map) {
+      orderBy_ = Array.from(orderBy);
+    } else if (
+      orderBy !== null &&
+      Object.getPrototypeOf(orderBy) === Object.prototype
+    ) {
+      orderBy_ = Object.entries(orderBy);
+    } else {
+      throw new InvalidOrderBy('The orderBy must be an array, object or Map');
     }
 
     const orderBySanitized: OrderBy = new Map<string, Sort>([]);
 
-    for (const criterion of orderBy) {
+    for (const criterion of orderBy_) {
       if (!Array.isArray(criterion)) {
         throw new InvalidOrderBy(
           'The criterion of orderBy must be an array',
@@ -84,6 +115,9 @@ export class Criteria<
       }
       if (typeof field !== 'string') {
         throw new InvalidOrderBy('The field order must be a string', field);
+      }
+      if (orderBySanitized.has(field)) {
+        throw new InvalidOrderBy(`The field ${field} has multiple entries.`);
       }
       orderBySanitized.set(field, sort);
     }

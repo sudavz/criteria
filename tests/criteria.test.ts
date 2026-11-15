@@ -152,18 +152,60 @@ describe('Criteria', () => {
 
   describe('orderBy criteria', () => {
     it.for([
-      { orderBy: [] as any[] },
-      { orderBy: [['name', 'DESC']] },
-      { orderBy: [['username', 'ASC']] },
+      { orderBy: [] as any[], expected: [] },
+      {
+        orderBy: new Map([]),
+        expected: [],
+      },
+      {
+        orderBy: {},
+        expected: [],
+      },
+      { orderBy: [['name', 'DESC']], expected: [['name', 'DESC']] },
+      { orderBy: [['username', 'ASC']], expected: [['username', 'ASC']] },
       {
         orderBy: [
           ['age', 'DESC'],
           ['createdAt', 'ASC'],
         ],
+        expected: [
+          ['age', 'DESC'],
+          ['createdAt', 'ASC'],
+        ],
       },
-    ])('should pass when orderBy is $orderBy', ({ orderBy }) => {
+      {
+        orderBy: {
+          publicationDate: 'ASC',
+          rate: 'DESC',
+        },
+        expected: [
+          ['publicationDate', 'ASC'],
+          ['rate', 'DESC'],
+        ],
+      },
+      {
+        orderBy: {
+          username: 'ASC',
+          id: 'DESC',
+        },
+        expected: [
+          ['username', 'ASC'],
+          ['id', 'DESC'],
+        ],
+      },
+      {
+        orderBy: new Map([
+          ['name', 'DESC'],
+          ['id', 'ASC'],
+        ]),
+        expected: [
+          ['name', 'DESC'],
+          ['id', 'ASC'],
+        ],
+      },
+    ])('should pass when orderBy is $orderBy', ({ orderBy, expected }) => {
       expect(Criteria.create({ orderBy } as any).orderBy).toStrictEqual(
-        orderBy,
+        expected,
       );
     });
 
@@ -183,16 +225,16 @@ describe('Criteria', () => {
       [['null', null]],
       [[]],
       [
-        ['field', 'DESC'],
-        ['field', 'ASC'],
-        ['field', 34],
+        ['field1', 'DESC'],
+        ['field2', 'ASC'],
+        ['field3', 43],
       ],
       [
-        ['field', 'DESC'],
-        ['field', 'ASC'],
-        ['field', 'ASI'],
+        ['field1', 'DESC'],
+        ['field2', 'ASC'],
+        ['field3', 'ASI'],
       ],
-      [['field', 'DESC'], ['field', 'ASC'], ['ASI']],
+      [['field1', 'DESC'], ['field2', 'ASC'], ['ASI']],
       [['field', null, 'DESC', '2', true]],
       [['field', 'ASC', 'DESC', '2', true]],
       [[2, 'ASC']],
@@ -201,6 +243,17 @@ describe('Criteria', () => {
       [[null, 'ASC']],
       [[() => {}, 'ASC']],
       [['id', 23, 'DESC', 'extra1', 'extra2', 'extra3', 'extra4']],
+      [
+        ['field1', 'DESC'],
+        ['field2', 'ASC'],
+        ['field1', 'ASC'],
+      ],
+      { field1: 'DESC', field2: 'AS' },
+      { field1: 'DE', field2: 'ASC' },
+      new Map([['field1', 'A']]),
+      new Date(),
+      new Set([1, 2, 3, 4]),
+      new Error(),
     ])('should throw InvalidOrderBy when orderBy is %s', (orderBy) => {
       expect(() => Criteria.create({ orderBy } as any)).toThrow(InvalidOrderBy);
     });
