@@ -45,6 +45,8 @@ Operations are actions performed on a field or value, such as comparing values f
 
 > **Note:** To reference another field as a value, prefix the string with `$`, e.g., `"$username"`
 
+You can combine multiple fields in the same filter object. They are joined with an implicit `and`, so all conditions must be true.
+
 | Operator  |                                              Description                                              |
 | :-------: | :---------------------------------------------------------------------------------------------------: |
 | `between` |                             Checks if a value is within a specific range                              |
@@ -153,18 +155,20 @@ const criteria = Criteria.create({
   },
   pagination: Pagination.byPage(3),
   orderBy: {
-    id: 'DESC',
     age: 'ASC',
+    id: 'DESC',
   },
   limit: 15,
 });
 ```
 
-> **Note:** If pagination is specified without a `limit`, `Criteria` throws an exception. Pagination strictly requires a page size (`limit`) to operate: page-based pagination uses it to calculate the offset (`OFFSET = (page - 1) * limit`), and cursor-based pagination uses it to bound the batch size.
+> **Note:** If you specify pagination, you also need a page size (`limit`); otherwise, `Criteria` throws an exception. In your query adapter, use the page number and limit to calculate the offset (`OFFSET = (page - 1) * limit`), or use the cursor criteria to select the next results. Apply `limit` to control how many results each query returns.
 
 #### Using Cursor
 
 When using cursor-based pagination, `Pagination` relies on the `CursorPayload` type, which represents a list of field criteria with values and sort orders.
+
+`Pagination` validates and stores your cursor criteria. To use them in a query, translate them into conditions and apply their sort order in your query adapter.
 
 ```typescript
 import { Criteria, Pagination, type CursorPayload } from '@criteria-ts/core';
