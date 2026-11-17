@@ -19,14 +19,8 @@ import { Criteria } from '@criteria-ts/core';
 
 const criteria = Criteria.create({
   filter: {
-    or: [
-      {
-        username: { equals: 'daana' },
-      },
-      {
-        username: { equals: 'blasteer' },
-      },
-    ],
+    firstName: { equals: 'Alan' },
+    lastName: { equals: 'Turing' },
   },
 });
 ```
@@ -70,41 +64,37 @@ Operations are actions performed on a field or value, such as comparing values f
 
 ```typescript
 {
-  email: {
-    equals: 'wtf@example.com'
-  }
+  email: { equals: 'wtf@example.com' },
 }
 ```
 
 ```typescript
 {
-  age: {
-    gte: 18
-  }
+  age: { gte: 18 },
 }
 ```
 
 ```typescript
 {
-  pilotName: {
-   in: ["leclerc", "hammilton", "alonso", "perez"]
-  }
+  pilotName: { in: ['leclerc', 'hammilton', 'alonso', 'perez'] },
 }
 ```
 
 ```typescript
 {
-  trackId: {
-    isNull: true // “false” to checks that “trackId” is not null
-  }
+  trackId: { isNull: true },
 }
 ```
 
 ```typescript
 {
-  score: {
-    between: [1.3, 90]
-  }
+  score: { between: [1.3, 90] },
+}
+```
+
+```typescript
+{
+  lapTime: { lt: '$personalBest' },
 }
 ```
 
@@ -120,7 +110,19 @@ Operations are actions performed on a field or value, such as comparing values f
 
 ```typescript
 {
-  and: [{ age: { gte: 18 } }, { age: { lte: 60 } }]
+  and: [
+    { pilotName: { equals: 'alonso' } },
+    { finishPosition: { lte: 3 } },
+  ],
+}
+```
+
+```typescript
+{
+  or: [
+    { username: { in: ['daana', 'blasteer'] } },
+    { role: { equals: 'maintainer' } },
+  ],
 }
 ```
 
@@ -130,8 +132,8 @@ Operations are actions performed on a field or value, such as comparing values f
     or: [
       { username: { equals: 'torlvals' } },
       { username: { equals: 'robCMartin' } },
-    ]
-  }
+    ],
+  },
 }
 ```
 
@@ -146,9 +148,8 @@ import { Criteria, Pagination } from '@criteria-ts/core';
 
 const criteria = Criteria.create({
   filter: {
-    age: {
-      gte: 18,
-    },
+    programmingLanguage: { in: ['C', 'Lisp'] },
+    age: { gte: 18 },
   },
   pagination: Pagination.byPage(3),
   orderBy: {
@@ -169,16 +170,17 @@ When using cursor-based pagination, `Pagination` relies on the `CursorPayload` t
 import { Criteria, Pagination, type CursorPayload } from '@criteria-ts/core';
 
 const cursor: CursorPayload = [
-  ['createdAt', '1989-02-25 11:56:26.472 -0500', 'DESC'],
-  ['username', 'richstallman', 'ASC'],
+  ['isPinned', true, 'DESC'],
+  ['publishedAt', '1989-02-25 11:56:26.472 -0500', 'DESC'],
+  ['authorUsername', 'richstallman', 'ASC'],
   ['id', 32, 'DESC'],
 ];
 
-const criteria = Criteria.create({
+const postsCriteria = Criteria.create({
   filter: {
-    age: {
-      gte: 18,
-    },
+    status: { equals: 'published' },
+    topic: { in: ['programming', 'free-software'] },
+    deletedAt: { isNull: true },
   },
   pagination: Pagination.byCursor(cursor),
   limit: 30,
