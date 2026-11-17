@@ -71,7 +71,7 @@ Operations are actions performed on a field or value, such as comparing values f
 ```typescript
 {
   email: {
-    equals: 'wtf@example.com';
+    equals: 'wtf@example.com'
   }
 }
 ```
@@ -79,7 +79,7 @@ Operations are actions performed on a field or value, such as comparing values f
 ```typescript
 {
   age: {
-    gte: 18;
+    gte: 18
   }
 }
 ```
@@ -95,7 +95,7 @@ Operations are actions performed on a field or value, such as comparing values f
 ```typescript
 {
   trackId: {
-    isNull: true; // “false” to checks that “trackId” is not null
+    isNull: true // “false” to checks that “trackId” is not null
   }
 }
 ```
@@ -103,7 +103,7 @@ Operations are actions performed on a field or value, such as comparing values f
 ```typescript
 {
   score: {
-    between: [1.3, 90];
+    between: [1.3, 90]
   }
 }
 ```
@@ -120,7 +120,7 @@ Operations are actions performed on a field or value, such as comparing values f
 
 ```typescript
 {
-  and: [{ age: { gte: 18 } }, { age: { lte: 60 } }];
+  and: [{ age: { gte: 18 } }, { age: { lte: 60 } }]
 }
 ```
 
@@ -130,7 +130,7 @@ Operations are actions performed on a field or value, such as comparing values f
     or: [
       { username: { equals: 'torlvals' } },
       { username: { equals: 'robCMartin' } },
-    ];
+    ]
   }
 }
 ```
@@ -151,10 +151,10 @@ const criteria = Criteria.create({
     },
   },
   pagination: Pagination.byPage(3),
-  orderBy: [
-    ['id', 'DESC'],
-    ['age', 'ASC'],
-  ],
+  orderBy: {
+    id: 'DESC',
+    age: 'ASC',
+  },
   limit: 15,
 });
 ```
