@@ -54,9 +54,26 @@ const nodesValidInArrayNode = new Set<string>([
 
 const literalTypesValids = new Set<string>(['string', 'number', 'boolean']);
 
+export interface ParseOptions {
+  maxRecursionGrammarDepth?: number;
+}
+
+const MAX_DEFAULT_GRAMMAR_DEPTH = 32;
+
 export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   input: Grammar.Expression<T>,
+  parseOptions: ParseOptions = {},
+  recursionDepth = 1,
 ): Ast.ExpressionNode {
+  if (
+    recursionDepth >
+    (parseOptions.maxRecursionGrammarDepth ?? MAX_DEFAULT_GRAMMAR_DEPTH)
+  ) {
+    throw new InvalidExpression(
+      'The expression exceded max recursion depth',
+      recursionDepth,
+    );
+  }
   // Field expressions
   if (typeof input === 'string' && input.charAt(0) === '$') {
     const field: string = input.slice(1);
@@ -74,7 +91,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
     const items = [];
 
     for (const item of input) {
-      const expression = parse(item);
+      const expression = parse(item, parseOptions, recursionDepth + 1);
       if (!nodesValidInArrayNode.has(expression.kind)) {
         throw new InvalidExpression(
           'The Array expression requires a LiteralExpression, ArrayExpression, or FieldExpression',
@@ -122,7 +139,11 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
       const expressions: Ast.LogicalNode['left'][] = [];
 
       for (const expressionInput of expressionsInput) {
-        const expression = parse(expressionInput);
+        const expression = parse(
+          expressionInput,
+          parseOptions,
+          recursionDepth + 1,
+        );
         if (!nodesWithBooleanReturn.has(expression.kind)) {
           throw new InvalidExpression(
             'The LogicExpression requires valid expressions',
@@ -145,7 +166,11 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
     if (key === 'not') {
       const expressionInput = (input as Grammar.NotExpression<T>)['not'];
 
-      const expression = parse(expressionInput);
+      const expression = parse(
+        expressionInput,
+        parseOptions,
+        recursionDepth + 1,
+      );
 
       if (!nodesWithBooleanReturn.has(expression.kind)) {
         throw new InvalidExpression(
@@ -203,7 +228,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
         buildComparisonNode(
           buildFieldNode(key),
           mapComparisonOperator[operator as Grammar.ComparisonOperator],
-          parse(expressionInput),
+          parse(expressionInput, parseOptions, recursionDepth + 1),
         ),
       );
       continue;
@@ -220,7 +245,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
         );
       }
 
-      const arrayNode = parse(arrayInput);
+      const arrayNode = parse(arrayInput, parseOptions, recursionDepth + 1);
 
       if (arrayNode.kind !== 'ArrayNode') {
         throw new InvalidExpression(
@@ -262,8 +287,16 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
         );
       }
 
-      const leftExpression = parse(betweenValue[0]);
-      const rightExpression = parse(betweenValue[1]);
+      const leftExpression = parse(
+        betweenValue[0],
+        parseOptions,
+        recursionDepth + 1,
+      );
+      const rightExpression = parse(
+        betweenValue[1],
+        parseOptions,
+        recursionDepth + 1,
+      );
 
       if (
         (leftExpression.kind !== 'LiteralNode' &&
