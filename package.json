@@ -45,7 +45,7 @@
   "scripts": {
     "build:check": "tsc --noEmit",
     "build:prod": "tsc",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.test.config.ts",
     "test:coverage": "vitest run --coverage",
     "format": "prettier --write --config .prettierrc .",
     "prepare:develop": "husky",
