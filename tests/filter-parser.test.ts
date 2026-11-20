@@ -1,7 +1,7 @@
 import * as FilterParser from '../src/filter/filter-parser';
 import { Expression } from '../src/filter/grammar';
 import InvalidExpression from '../src/exceptions/invalid-expression';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 
 describe('FilterParser', () => {
   describe('general expressions', () => {
@@ -35,6 +35,35 @@ describe('FilterParser', () => {
       expect(() => FilterParser.parse(badExpression as any)).toThrow(
         InvalidExpression,
       );
+    });
+  });
+
+  describe('Recursion depth', () => {
+    test('should throw InvalidExpression when the input depth is exceded', () => {
+      const expression: Expression = {
+        and: [
+          { some: { eq: 'some' } },
+          {
+            or: [
+              { some: { eq: 'some' } },
+              { and: [{ some: { eq: 'some' } }, { some: { eq: 'some' } }] },
+            ],
+          },
+        ],
+      }; // Depth recursion is 5
+
+      expect(() =>
+        FilterParser.parse(expression, { maxRecursionGrammarDepth: 3 }),
+      ).toThrow(InvalidExpression);
+      expect(() =>
+        FilterParser.parse(expression, { maxRecursionGrammarDepth: 4 }),
+      ).toThrow(InvalidExpression);
+      expect(
+        FilterParser.parse(expression, { maxRecursionGrammarDepth: 5 }),
+      ).toMatchObject({ kind: 'LogicalNode' });
+      expect(
+        FilterParser.parse(expression, { maxRecursionGrammarDepth: 6 }),
+      ).toMatchObject({ kind: 'LogicalNode' });
     });
   });
 
