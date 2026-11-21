@@ -30,31 +30,33 @@ describe('Criteria', () => {
     expect(criteriPlainObject).toMatchObject({
       filterExpression: {
         kind: 'LogicalNode',
-        left: {
-          kind: 'ComparisonNode',
-          left: {
-            kind: 'FieldNode',
-            value: 'username',
-          },
-          operator: '==',
-          right: {
-            kind: 'LiteralNode',
-            value: 'suanfansoon',
-          },
-        },
         operator: '&&',
-        right: {
-          kind: 'ComparisonNode',
-          left: {
-            kind: 'FieldNode',
-            value: 'age',
+        expressions: [
+          {
+            kind: 'ComparisonNode',
+            left: {
+              kind: 'FieldNode',
+              value: 'username',
+            },
+            operator: '==',
+            right: {
+              kind: 'LiteralNode',
+              value: 'suanfansoon',
+            },
           },
-          operator: '>',
-          right: {
-            kind: 'LiteralNode',
-            value: 25,
+          {
+            kind: 'ComparisonNode',
+            left: {
+              kind: 'FieldNode',
+              value: 'age',
+            },
+            operator: '>',
+            right: {
+              kind: 'LiteralNode',
+              value: 25,
+            },
           },
-        },
+        ],
       },
       pagination: { kind: 'Page', page: 23, cursor: null },
       orderBy: [],

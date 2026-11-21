@@ -115,7 +115,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
       input,
     );
 
-  const rootNodes: Ast.LogicalNode['left'][] = [];
+  const rootNodes: Ast.ExpressionNode[] = [];
 
   for (const key of keys) {
     // Logic operators
@@ -136,7 +136,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
         );
       }
 
-      const expressions: Ast.LogicalNode['left'][] = [];
+      const expressions: Ast.ExpressionNode[] = [];
 
       for (const expressionInput of expressionsInput) {
         const expression = parse(
@@ -153,11 +153,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
         expressions.push(expression);
       }
 
-      rootNodes.push(
-        expressions.reduce((le, re) =>
-          buildLogicalNode(le, mapLogicalOperator[key], re),
-        ),
-      );
+      rootNodes.push(buildLogicalNode(mapLogicalOperator[key], expressions));
       continue;
     }
 
@@ -318,5 +314,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
     throw new InvalidExpression('The input expression is invalid', input);
   }
 
-  return rootNodes.reduce((le, re) => buildLogicalNode(le, '&&', re));
+  return rootNodes.length === 1
+    ? rootNodes[0]
+    : buildLogicalNode('&&', rootNodes);
 }
