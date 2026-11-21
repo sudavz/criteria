@@ -66,11 +66,10 @@ describe('Visitor suit test', () => {
 
   const input = [
     {
-      node: buildLogicalNode(
+      node: buildLogicalNode('&&', [
         buildFieldNode('isValid'),
-        '&&',
         buildFieldNode('status'),
-      ),
+      ]),
       visitMethod: visitLogicalNode,
       description: 'AndNode',
     },

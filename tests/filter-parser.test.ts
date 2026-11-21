@@ -12,19 +12,21 @@ describe('FilterParser', () => {
 
       expect(parserResult).toMatchObject({
         kind: 'LogicalNode',
-        left: {
-          kind: 'ComparisonNode',
-          left: { kind: 'FieldNode', value: 'username' },
-          operator: '!=',
-          right: { kind: 'LiteralNode', value: 'jazzz' },
-        },
         operator: '&&',
-        right: {
-          kind: 'ComparisonNode',
-          left: { kind: 'FieldNode', value: 'age' },
-          operator: '<=',
-          right: { kind: 'FieldNode', value: 'parentAage' },
-        },
+        expressions: [
+          {
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'username' },
+            operator: '!=',
+            right: { kind: 'LiteralNode', value: 'jazzz' },
+          },
+          {
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'age' },
+            operator: '<=',
+            right: { kind: 'FieldNode', value: 'parentAage' },
+          },
+        ],
       });
     });
 
@@ -212,14 +214,8 @@ describe('FilterParser', () => {
         const result = FilterParser.parse(input as any);
         expect(result).toMatchObject({
           kind: 'LogicalNode',
-          left: {
-            kind: 'LogicalNode',
-            left: nodeNested[0],
-            operator,
-            right: nodeNested[1],
-          },
           operator,
-          right: nodeNested[2],
+          expressions: [nodeNested[0], nodeNested[1], nodeNested[2]],
         });
       },
     );

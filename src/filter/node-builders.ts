@@ -26,15 +26,13 @@ export function buildComparisonNode(
 }
 
 export function buildLogicalNode(
-  left: Ast.LogicalNode['left'],
   operator: Ast.NodeLogicalOperator,
-  right: Ast.LogicalNode['right'],
+  expressions: Ast.LogicalNode['expressions'],
 ): Ast.LogicalNode {
   const obj: Ast.LogicalNode = {
     kind: 'LogicalNode',
-    left,
     operator,
-    right,
+    expressions: Object.freeze(expressions),
     accept: <T>(visitor: Visitor<T>) => visitor.visitLogicalNode(obj),
   };
   return Object.freeze(obj);
