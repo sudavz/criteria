@@ -12,7 +12,6 @@ import {
   buildNotNode,
 } from './node-builders.js';
 import * as Grammar from './grammar.js';
-import { validateFieldExpression } from './validate-field-expression.js';
 
 const mapComparisonOperator: Record<
   Grammar.ComparisonOperator,
@@ -54,6 +53,9 @@ const nodesValidInArrayNode = new Set<string>([
 
 const literalTypesValids = new Set<string>(['string', 'number', 'boolean']);
 
+export const fieldNameRegex =
+  /^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)*$/;
+
 export interface ParseOptions {
   maxRecursionGrammarDepth?: number;
 }
@@ -77,7 +79,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   // Field expressions
   if (typeof input === 'string' && input.charAt(0) === '$') {
     const field: string = input.slice(1);
-    validateFieldExpression(field);
+    validateFieldName(field);
     return buildFieldNode(field);
   }
 
@@ -179,7 +181,7 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
       continue;
     }
 
-    validateFieldExpression(key);
+    validateFieldName(key);
 
     const operation = (input as T)[
       key
@@ -317,4 +319,10 @@ export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
   return rootNodes.length === 1
     ? rootNodes[0]
     : buildLogicalNode('&&', rootNodes);
+}
+
+function validateFieldName(field: string) {
+  if (!fieldNameRegex.test(field)) {
+    throw new InvalidExpression(`The field name provided is invalid`, field);
+  }
 }

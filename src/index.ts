@@ -11,9 +11,9 @@ import InvalidLimit from './exceptions/invalid-limit.js';
 import InvalidOrderBy from './exceptions/invalid-orderby.js';
 import InvalidPage from './exceptions/invalid-page.js';
 import InvalidPagination from './exceptions/invalid-pagination.js';
+import { fieldNameRegex } from './filter/filter-parser.js';
 import * as Ast from './filter/ast.js';
 import * as Grammar from './filter/grammar.js';
-import { validateFieldExpression } from './filter/validate-field-expression.js';
 
 import type { Visitor } from './filter/visitor.js';
 import type {
@@ -35,7 +35,7 @@ export {
   InvalidPage,
   InvalidPagination,
   Pagination,
-  validateFieldExpression,
+  fieldNameRegex,
   type CriteriaOptions,
   type CursorCriterion,
   type CursorPayload,
