@@ -139,6 +139,47 @@ You can combine multiple fields in the same filter object. They are joined with 
 }
 ```
 
+### Order by
+
+Use `orderBy` to specify sort fields in priority order. Each field takes a direction of `ASC` or `DESC` and follows the same field-name rules as filters.
+
+The following examples sort by `age` in ascending order, then by `id` in descending order when ages are equal.
+
+**Object**
+
+```typescript
+const criteria = Criteria.create({
+  orderBy: {
+    age: 'ASC',
+    id: 'DESC',
+  },
+});
+```
+
+**Array of field and direction pairs**
+
+Repeating a field name in the array throws `InvalidOrderBy`.
+
+```typescript
+const criteria = Criteria.create({
+  orderBy: [
+    ['age', 'ASC'],
+    ['id', 'DESC'],
+  ],
+});
+```
+
+**`Map` from field to direction**
+
+```typescript
+const criteria = Criteria.create({
+  orderBy: new Map([
+    ['age', 'ASC'],
+    ['id', 'DESC'],
+  ]),
+});
+```
+
 ### Pagination
 
 You can configure result pagination using either page-number or cursor-based strategies. Instantiate a `Pagination` object using the static factory methods `Pagination.byPage` or `Pagination.byCursor` depending on your strategy:

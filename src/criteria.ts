@@ -25,8 +25,7 @@ export interface CriteriaOptions<
    *
    * @remarks
    * Accepts an object, array of pairs, or Map. Use `ASC` or `DESC` for each field.
-   * Objects may reorder numeric field names; use an array or Map to preserve
-   * their priority. Repeated field names in an array throw `InvalidOrderBy`.
+   * Repeated field names in an array throw `InvalidOrderBy`.
    *
    * @example
    * ```typescript
