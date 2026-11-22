@@ -269,17 +269,44 @@ describe('Criteria', () => {
 
   describe('Pagination criteria', () => {
     it.for([
-      { pagination: Pagination.byPage(14), limit: 10 },
-      { pagination: Pagination.byPage(34), limit: 100 },
-      { pagination: Pagination.byPage(32345), limit: 103 },
-      { pagination: Pagination.byPage(234544), limit: 343434 },
-      { pagination: Pagination.byCursor([['id', 1, 'ASC']]), limit: 103 },
-      { pagination: Pagination.byCursor([['id', 3, 'DESC']]), limit: 23788 },
+      { pagination: Pagination.byPage(14), orderBy: null, limit: 10 },
+      { pagination: Pagination.byPage(34), orderBy: null, limit: 100 },
+      { pagination: Pagination.byPage(32345), orderBy: null, limit: 103 },
+      { pagination: Pagination.byPage(234544), orderBy: null, limit: 343434 },
+      {
+        pagination: Pagination.byPage(24),
+        orderBy: [
+          ['id', 'DESC'],
+          ['name', 'ASC'],
+        ],
+        limit: 103,
+      },
+      {
+        pagination: Pagination.byPage(45667),
+        orderBy: [['field2', 'ASC']],
+        limit: 605,
+      },
+      {
+        pagination: Pagination.byCursor([['id', 1, 'ASC']]),
+        orderBy: null,
+        limit: 103,
+      },
+      {
+        pagination: Pagination.byCursor([['id', 3, 'DESC']]),
+        orderBy: null,
+        limit: 23788,
+      },
+      {
+        pagination: Pagination.byCursor([['id', 1, 'ASC']]),
+        orderBy: [],
+        limit: 10,
+      },
     ])(
-      'should pass when pagination is $pagination and limit is $limit',
-      ({ pagination, limit }) => {
+      'should pass when pagination is $pagination, limit is $limit and orderBy is $orderBy',
+      ({ pagination, limit, orderBy }) => {
         const criteria = Criteria.create({
           pagination,
+          orderBy: orderBy as any,
           limit,
         });
 
@@ -287,7 +314,7 @@ describe('Criteria', () => {
         expect(criteria.toObjectPlain()).toStrictEqual({
           filterExpression: null,
           pagination: pagination.toObjectPlain(),
-          orderBy: [],
+          orderBy: orderBy ?? [],
           limit,
         });
         expect(criteria.limit).toBe(limit);
@@ -295,32 +322,47 @@ describe('Criteria', () => {
     );
 
     it.for([
-      { pagination: Pagination.byPage(34), limit: undefined },
-      { pagination: Pagination.byPage(45), limit: undefined },
-      { pagination: Pagination.byPage(34), limit: null },
-      { pagination: Pagination.byPage(45), limit: null },
+      { pagination: Pagination.byPage(34), limit: undefined, orderBy: null },
+      { pagination: Pagination.byPage(45), limit: undefined, orderBy: null },
+      { pagination: Pagination.byPage(34), limit: null, orderBy: null },
+      { pagination: Pagination.byPage(45), limit: null, orderBy: null },
       {
         pagination: Pagination.byCursor([['field', 0, 'ASC']]),
         limit: undefined,
+        orderBy: null,
       },
       {
         pagination: Pagination.byCursor([['field', 0, 'ASC']]),
         limit: null,
+        orderBy: null,
       },
-      { pagination: 'pagination', limit: 2 },
-      { pagination: true, limit: 3 },
-      { pagination: false, limit: 4 },
-      { pagination: () => {}, limit: 4 },
-      { pagination: { test: 'test' }, limit: 4 },
-      { pagination: new Date(), limit: 4 },
-      { pagination: new Map([['hello', 'world']]), limit: 4 },
-      { pagination: [[]], limit: 4 },
+      {
+        pagination: Pagination.byCursor([['field', 0, 'ASC']]),
+        limit: 34,
+        orderBy: { field1: 'ASC', field2: 'DESC' },
+      },
+      {
+        pagination: Pagination.byCursor([
+          ['field1', 0, 'ASC'],
+          ['field2', 34, 'DESC'],
+        ]),
+        limit: 23,
+        orderBy: { field1: 'ASC', field2: 'DESC' },
+      },
+      { pagination: 'pagination', limit: 2, orderBy: null },
+      { pagination: true, limit: 3, orderBy: null },
+      { pagination: false, limit: 4, orderBy: null },
+      { pagination: () => {}, limit: 4, orderBy: null },
+      { pagination: { test: 'test' }, limit: 4, orderBy: null },
+      { pagination: new Date(), limit: 4, orderBy: null },
+      { pagination: new Map([['hello', 'world']]), limit: 4, orderBy: null },
+      { pagination: [[]], limit: 4, orderBy: null },
     ])(
-      'should throw InvalidPagination when pagination is $pagination and limit is $limit',
-      ({ pagination, limit }) => {
-        expect(() => Criteria.create({ pagination, limit } as any)).toThrow(
-          InvalidPagination,
-        );
+      'should throw InvalidPagination when pagination is $pagination, limit is $limit and orderBy is $orderBy',
+      ({ pagination, limit, orderBy }) => {
+        expect(() =>
+          Criteria.create({ pagination, limit, orderBy } as any),
+        ).toThrow(InvalidPagination);
       },
     );
   });

@@ -211,6 +211,8 @@ When using cursor-based pagination, `Pagination` relies on the `CursorPayload` t
 
 `Pagination` validates and stores your cursor criteria. To use them in a query, translate them into conditions and apply their sort order in your query adapter.
 
+`Criteria.create` throws `InvalidPagination` if cursor pagination is combined with a non-empty `orderBy`. Omit `orderBy` or pass an empty collection.
+
 ```typescript
 import { Criteria, Pagination, type CursorPayload } from '@criteria-ts/core';
 

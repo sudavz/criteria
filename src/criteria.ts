@@ -19,6 +19,14 @@ export interface CriteriaOptions<
   T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
 > {
   filter?: Expression<T> | null;
+
+  /**
+   * Paginates results by page or cursor.
+   *
+   * @remarks
+   * Pagination requires a limit. Cursor pagination uses the sort order in the
+   * cursor. Combining it with a non-empty `orderBy` throws `InvalidPagination`.
+   */
   pagination?: Pagination | null;
   /**
    * Sorts by the listed fields, in priority order.
@@ -48,12 +56,12 @@ export class Criteria<
   private constructor(
     private filterExpression_: ExpressionNode | null,
     private pagination_: Pagination | null,
-    orderBy: OrderByRaw<T>,
+    orderBy: OrderByRaw<T> | null,
     private limit_: number | null,
   ) {
     this.validateLimit(limit_);
-    this.validatePaginationIntegrity(pagination_, limit_);
     this.orderBy_ = this.validateOrderBy(orderBy);
+    this.validatePaginationIntegrity(pagination_, limit_, this.orderBy_);
     Object.freeze(this);
   }
 
@@ -67,24 +75,22 @@ export class Criteria<
     const criteria = new Criteria<T>(
       filterExpression,
       pagination ?? null,
-      orderBy ?? [],
+      orderBy ?? null,
       limit ?? null,
     );
 
     return criteria;
   }
 
-  private validateOrderBy(orderBy: OrderByRaw<T>): OrderBy {
+  private validateOrderBy(orderBy: OrderByRaw<T> | null): OrderBy {
     let orderBy_: [string, unknown][] = [];
-
-    if (Array.isArray(orderBy)) {
+    if (orderBy === null) {
+      return new Map<string, Sort>([]);
+    } else if (Array.isArray(orderBy)) {
       orderBy_ = orderBy;
     } else if (orderBy instanceof Map) {
       orderBy_ = Array.from(orderBy);
-    } else if (
-      orderBy !== null &&
-      Object.getPrototypeOf(orderBy) === Object.prototype
-    ) {
+    } else if (Object.getPrototypeOf(orderBy) === Object.prototype) {
       orderBy_ = Object.entries(orderBy);
     } else {
       throw new InvalidOrderBy('The orderBy must be an array, object or Map');
@@ -133,6 +139,7 @@ export class Criteria<
   private validatePaginationIntegrity(
     pagination: Pagination | null,
     limit: number | null,
+    orderBy: OrderBy,
   ) {
     if (pagination !== null && !(pagination instanceof Pagination)) {
       throw new InvalidPagination(
@@ -144,6 +151,12 @@ export class Criteria<
     if (pagination !== null && !Number.isInteger(limit)) {
       throw new InvalidPagination(
         'To apply pagination you must provide a limit',
+      );
+    }
+
+    if (pagination?.kind === 'Cursor' && orderBy.size > 0) {
+      throw new InvalidPagination(
+        'Cursor pagination cannot be combined with a non-empty orderBy',
       );
     }
   }
