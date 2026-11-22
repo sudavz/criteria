@@ -224,9 +224,12 @@ describe('FilterParser', () => {
   describe('comparison expressions', () => {
     it.for([
       { dog: { equals: {} } },
+      { dog: { eq: undefined } },
+      { dog: { gt: undefined } },
       { age: { gt: 10, lt: 20 } },
       { score: { gt: true } },
       { some: { lt: {} } },
+      { dog: { diff: undefined } },
       { 1: { gt: () => {} } },
       { username: { gt: {} } },
       { cat: { diff: [() => {}, undefined] } },
