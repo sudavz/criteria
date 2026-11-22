@@ -113,8 +113,14 @@ export class Criteria<
       if (sort !== 'DESC' && sort !== 'ASC') {
         throw new InvalidOrderBy('The sort value must be ASC or DESC', sort);
       }
-      if (typeof field !== 'string') {
-        throw new InvalidOrderBy('The field order must be a string', field);
+      if (
+        typeof field !== 'string' ||
+        !FilterParser.fieldNameRegex.test(field)
+      ) {
+        throw new InvalidOrderBy(
+          'The field order must be a string valid',
+          field,
+        );
       }
       if (orderBySanitized.has(field)) {
         throw new InvalidOrderBy(`The field ${field} has multiple entries.`);
