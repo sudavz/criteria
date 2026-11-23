@@ -1,87 +1,30 @@
 {
-  "name": "@criteria-ts/core",
-  "version": "0.1.0-alpha.12",
-  "description": "A TypeScript library for building decoupled search and filtering criteria using the Criteria pattern.",
-  "license": "MIT",
-  "author": "David Suarez sudavz@proton.me",
-  "type": "module",
-  "main": "./lib/index.js",
-  "private": false,
-  "homepage": "https://github.com/sudavz/criteria",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sudavz/criteria.git"
-  },
-  "keywords": [
-    "criteria",
-    "criteria-pattern",
-    "specification-pattern",
-    "domain-driven-design",
-    "ddd",
-    "repository-pattern",
-    "clean-architecture",
-    "filtering",
-    "filter",
-    "query",
-    "query-filter",
-    "cursor-pagination",
-    "pagination",
-    "ast",
-    "visitor-pattern",
-    "type-safe",
-    "typescript"
-  ],
-  "devEngines": {
-    "runtime": {
-      "name": "node",
-      "onFail": "error",
-      "version": "^22.22.1 || ^24.0.0 || ^26.0.0"
+    "name": "criteria-ts",
+    "private": true,
+    "scripts": {
+        "build:check": "npm run build:check --workspaces --if-present",
+        "build:prod": "npm run build:prod --workspaces --if-present",
+        "lint": "npm run lint --workspaces --if-present",
+        "test": "npm run test --workspaces --if-present",
+        "test:coverage": "npm run test:coverage --workspaces --if-present",
+        "prepare:develop": "husky"
     },
-    "packageManager": {
-      "name": "npm",
-      "onFail": "error"
+    "workspaces": [
+        "packages/core",
+        "packages/adapters/*"
+    ],
+    "devDependencies": {
+        "@commitlint/cli": "^21.2.4",
+        "@commitlint/config-conventional": "^21.2.4",
+        "@types/node": "^22.20.5",
+        "@vitest/coverage-v8": "^5.1.0",
+        "husky": "^9.1.7",
+        "eslint": "^10.14.0",
+        "lint-staged": "^17.6.0",
+        "prettier": "^3.10.1",
+        "typescript": "npm:@typescript/typescript6@^6.0.2",
+        "typescript-7": "npm:typescript@^7.0.2",
+        "typescript-eslint": "^8.72.2",
+        "vitest": "^5.1.0"
     }
-  },
-  "scripts": {
-    "build:check": "tsc --noEmit",
-    "build:prod": "tsc",
-    "test": "vitest run --config vitest.test.config.ts",
-    "test:coverage": "vitest run --coverage",
-    "format": "prettier --write --config .prettierrc .",
-    "prepare:develop": "husky",
-    "lint": "eslint --config eslint.config.mjs \"src/**/*.ts\""
-  },
-  "types": "./lib/index.d.ts",
-  "exports": {
-    ".": "./lib/index.js"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "files": [
-    "lib",
-    "package.json",
-    "README.md",
-    "LICENSE"
-  ],
-  "lint-staged": {
-    "*.ts": [
-      "eslint --fix",
-      "prettier --write"
-    ]
-  },
-  "devDependencies": {
-    "@commitlint/cli": "^21.2.4",
-    "@commitlint/config-conventional": "^21.2.4",
-    "@types/node": "^22.20.5",
-    "@vitest/coverage-v8": "^5.1.0",
-    "eslint": "^10.14.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^17.6.0",
-    "prettier": "^3.10.1",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "typescript-7": "npm:typescript@^7.0.2",
-    "typescript-eslint": "^8.72.2",
-    "vitest": "^5.1.0"
-  }
 }
