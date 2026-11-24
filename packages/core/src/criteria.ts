@@ -3,7 +3,10 @@ import InvalidOrderBy from './exceptions/invalid-orderby.js';
 import InvalidPagination from './exceptions/invalid-pagination.js';
 import { ExpressionNode } from './filter/ast.js';
 import * as FilterParser from './filter/filter-parser.js';
-import { Expression, ValidValueTypes } from './filter/grammar.js';
+import {
+  DefaultExpressionType,
+  ExpressionWithBooleanReturn,
+} from './filter/grammar.js';
 import Pagination from './pagination.js';
 
 type OrderBy = Map<string, Sort>;
@@ -16,9 +19,9 @@ export type OrderByRaw<T> =
   | Map<T extends object ? keyof T : string, Sort>;
 
 export interface CriteriaOptions<
-  T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
+  T extends DefaultExpressionType<T> = DefaultExpressionType,
 > {
-  filter?: Expression<T> | null;
+  filter?: ExpressionWithBooleanReturn<T> | null;
 
   /**
    * Paginates results by page or cursor.
@@ -49,7 +52,7 @@ export interface CriteriaOptions<
 }
 
 export class Criteria<
-  T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
+  T extends DefaultExpressionType<T> = DefaultExpressionType,
 > {
   private orderBy_: OrderBy;
 
@@ -65,9 +68,9 @@ export class Criteria<
     Object.freeze(this);
   }
 
-  static create<
-    T extends Record<string, ValidValueTypes> = Record<string, ValidValueTypes>,
-  >(criteriaOptions: CriteriaOptions<NoInfer<T>> = {}) {
+  static create<T extends DefaultExpressionType<T> = DefaultExpressionType>(
+    criteriaOptions: CriteriaOptions<NoInfer<T>> = {},
+  ) {
     const { filter, limit, orderBy, pagination } = criteriaOptions;
 
     const filterExpression = filter ? FilterParser.parse(filter) : null;
