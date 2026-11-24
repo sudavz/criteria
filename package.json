@@ -4,9 +4,10 @@
     "scripts": {
         "build:check": "npm run build:check --workspaces --if-present",
         "build:prod": "npm run build:prod --workspaces --if-present",
-        "lint": "npm run lint --workspaces --if-present",
-        "test": "npm run test --workspaces --if-present",
-        "test:coverage": "npm run test:coverage --workspaces --if-present",
+        "test": "vitest run --config vitest.test.config.mjs",
+        "test:coverage": "vitest run --coverage --config vitest.test.config.mjs",
+        "lint": "eslint --config eslint.config.mjs",
+        "format": "prettier --write --config .prettierrc .",
         "prepare:develop": "husky"
     },
     "workspaces": [
