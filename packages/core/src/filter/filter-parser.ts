@@ -62,7 +62,9 @@ export interface ParseOptions {
 
 const MAX_DEFAULT_GRAMMAR_DEPTH = 32;
 
-export function parse<T extends Record<string, Grammar.ValidValueTypes>>(
+export function parse<
+  T extends Grammar.DefaultExpressionType<T> = Grammar.DefaultExpressionType,
+>(
   input: Grammar.Expression<T>,
   parseOptions: ParseOptions = {},
   recursionDepth = 1,
