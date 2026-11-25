@@ -72,7 +72,7 @@ You can combine multiple fields in the same filter object. They are joined with 
 
 ```typescript
 {
-  age: { gte: 18 },
+  age: { gte: 18, lt: 35 },
 }
 ```
 
