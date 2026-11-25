@@ -123,102 +123,127 @@ describe('FilterParser', () => {
     );
   });
 
-  describe('logical expressions (and / or)', () => {
-    it.for([
-      { and: [] },
-      { not: { or: [true] } },
-      { and: [{}, 1] },
-      { and: {} },
-      { and: null },
-      { and: [false, false, 1, 3] },
-      { and: [new Date(), { x: { equals: 1 } }] },
-      { and: [false, false, 1, 3] },
-    ])(
-      'should throw InvalidExpression when logical expression is %s',
-      (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
-          InvalidExpression,
+  describe('logical expressions', () => {
+    describe.for(['and', 'or'])(
+      'shoul pass when "%s" is used and ',
+      (operator) => {
+        it.for([
+          undefined,
+          null,
+          [null],
+          [undefined],
+          [],
+          [{}],
+          [{}, 1],
+          {},
+          { or: [true] },
+          [false, false, 1, 3],
+          [new Date(), { x: { equals: 1 } }],
+          [false, false, 1, 3],
+        ])(
+          'should throw InvalidExpression when logical expression is %s',
+          (input) => {
+            expect(() => FilterParser.parse({ [operator]: input })).toThrow(
+              InvalidExpression,
+            );
+          },
         );
       },
     );
 
-    const expressionNested = [
-      { role: { equals: 'admin' } },
-      { points: { lt: 2 } },
-      { not: { points: { in: [1] } } },
-    ];
-
-    const nodeNested = [
+    const expressionTest = [
       {
-        kind: 'ComparisonNode',
-        left: { kind: 'FieldNode', value: 'role' },
-        operator: '==',
-        right: { kind: 'LiteralNode', value: 'admin' },
+        expr: { role: { equals: 'admin' } },
+        node: {
+          kind: 'ComparisonNode',
+          left: { kind: 'FieldNode', value: 'role' },
+          operator: '==',
+          right: { kind: 'LiteralNode', value: 'admin' },
+        },
       },
       {
-        kind: 'ComparisonNode',
-        left: { kind: 'FieldNode', value: 'points' },
-        operator: '<',
-        right: { kind: 'LiteralNode', value: 2 },
+        expr: { points: { lt: 2 } },
+        node: {
+          kind: 'ComparisonNode',
+          left: { kind: 'FieldNode', value: 'points' },
+          operator: '<',
+          right: { kind: 'LiteralNode', value: 2 },
+        },
       },
       {
-        kind: 'NotNode',
-        expression: {
-          kind: 'InNode',
-          value: {
-            kind: 'FieldNode',
-            value: 'points',
+        expr: { age: { between: [1, 3] } },
+        node: {
+          kind: 'BetweenNode',
+          value: { kind: 'FieldNode', value: 'age' },
+          start: {
+            kind: 'LiteralNode',
+            value: 1,
           },
-          arrayExpression: {
-            kind: 'ArrayNode',
-            items: [
-              {
-                kind: 'LiteralNode',
-                value: 1,
-              },
-            ],
+          end: {
+            kind: 'LiteralNode',
+            value: 3,
           },
         },
       },
     ];
 
-    const input = [
-      {
-        input: {
-          or: expressionNested,
-        },
-        operator: '||',
-        nodeNested,
-      },
-      {
-        input: {
-          and: expressionNested,
-        },
-        operator: '&&',
-        nodeNested,
-      },
-      {
-        input: {
-          ...expressionNested[0],
-          ...expressionNested[1],
-          ...expressionNested[2],
-        },
-        operator: '&&',
-        nodeNested,
-      },
-    ];
-
-    it.for(input)(
-      'should parse logic expression with $input',
-      ({ input, operator, nodeNested }) => {
-        const result = FilterParser.parse(input as any);
+    test.for(['and', 'or'])(
+      'should pass when "%s" is used and ',
+      (operator) => {
+        const result = FilterParser.parse({
+          [operator]: expressionTest.map((i) => i.expr),
+        });
         expect(result).toMatchObject({
           kind: 'LogicalNode',
-          operator,
-          expressions: [nodeNested[0], nodeNested[1], nodeNested[2]],
+          operator: operator === 'and' ? '&&' : '||',
+          expressions: expressionTest.map((i) => i.node),
         });
       },
     );
+
+    test('should pass and parse in LogicalExpression (and) when input has multiple keys', () => {
+      expect(
+        FilterParser.parse({
+          ...expressionTest[0].expr,
+          ...expressionTest[1].expr,
+          ...expressionTest[2].expr,
+        } as any),
+      ).toMatchObject({
+        kind: 'LogicalNode',
+        operator: '&&',
+        expressions: expressionTest.map((i) => i.node),
+      });
+    });
+
+    test('should pass and parse in LogicalExpression (and) when field has multiple operands', () => {
+      const exp = {
+        field: { eq: 1, lt: 2, gt: 3 },
+      };
+      expect(FilterParser.parse(exp)).toMatchObject({
+        kind: 'LogicalNode',
+        operator: '&&',
+        expressions: [
+          {
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'field' },
+            operator: '==',
+            right: { kind: 'LiteralNode', value: 1 },
+          },
+          {
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'field' },
+            operator: '<',
+            right: { kind: 'LiteralNode', value: 2 },
+          },
+          {
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'field' },
+            operator: '>',
+            right: { kind: 'LiteralNode', value: 3 },
+          },
+        ],
+      });
+    });
   });
 
   describe('comparison expressions', () => {
@@ -226,7 +251,6 @@ describe('FilterParser', () => {
       { dog: { equals: {} } },
       { dog: { eq: undefined } },
       { dog: { gt: undefined } },
-      { age: { gt: 10, lt: 20 } },
       { score: { gt: true } },
       { some: { lt: {} } },
       { dog: { diff: undefined } },
