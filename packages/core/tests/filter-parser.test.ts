@@ -247,111 +247,118 @@ describe('FilterParser', () => {
   });
 
   describe('comparison expressions', () => {
-    it.for([
-      { dog: { equals: {} } },
-      { dog: { eq: undefined } },
-      { dog: { gt: undefined } },
-      { score: { gt: true } },
-      { some: { lt: {} } },
-      { dog: { diff: undefined } },
-      { 1: { gt: () => {} } },
-      { username: { gt: {} } },
-      { cat: { diff: [() => {}, undefined] } },
-      { age: { badOperator: {} } },
-    ])(
-      'should throw InvalidExpression when comparison expression is %s',
-      (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
-          InvalidExpression,
+    const mapComparisonOperator: Record<string, string> = {
+      equals: '==',
+      diff: '!=',
+      eq: '==',
+      ne: '!=',
+      gt: '>',
+      lt: '<',
+      gte: '>=',
+      lte: '<=',
+    };
+
+    describe.for(['eq', 'ne', 'equals', 'diff', 'gt', 'lt', 'lte', 'gte'])(
+      'when using %s with an invalid operand',
+      (operator) => {
+        it.for([
+          {},
+          undefined,
+          () => {},
+          [undefined],
+          [() => {}],
+          new Date(),
+          new Set(),
+          new Map(),
+          new Error(),
+        ])('should throw InvalidExpression for %s', (input) => {
+          expect(() =>
+            FilterParser.parse({ field: { [operator]: input } } as any),
+          ).toThrow(InvalidExpression);
+        });
+      },
+    );
+
+    const fieldAndLiteralToTest = [
+      {
+        input: -1,
+        node: { kind: 'LiteralNode', value: -1 },
+      },
+      {
+        input: 351,
+        node: { kind: 'LiteralNode', value: 351 },
+      },
+      {
+        input: 33.233333,
+        node: { kind: 'LiteralNode', value: 33.233333 },
+      },
+      {
+        input: Infinity,
+        node: { kind: 'LiteralNode', value: Infinity },
+      },
+      {
+        input: 'hello',
+        node: { kind: 'LiteralNode', value: 'hello' },
+      },
+      {
+        input: '$field',
+        node: { kind: 'FieldNode', value: 'field' },
+      },
+    ];
+
+    describe.concurrent.for(['lt', 'lte', 'gt', 'gte'])(
+      'when using the ordering operator %s',
+      (operator) => {
+        it.for([null, [], [1, 2, 3], true, false])(
+          'should throw InvalidExpression for %s',
+          (input) => {
+            expect(() =>
+              FilterParser.parse({ field: { [operator]: input } } as any),
+            ).toThrow(InvalidExpression);
+          },
+        );
+
+        it.for(fieldAndLiteralToTest)(
+          'should parse $input as a ComparisonNode',
+          ({ input, node }) => {
+            expect(
+              FilterParser.parse({ field: { [operator]: input } } as any),
+            ).toMatchObject({
+              kind: 'ComparisonNode',
+              left: { kind: 'FieldNode', value: 'field' },
+              operator: mapComparisonOperator[operator],
+              right: node,
+            });
+          },
         );
       },
     );
 
-    it.for([
-      {
-        input: { startDate: { lte: '$endDate' } },
-        field: 'startDate',
-        operator: '<=',
-        right: { kind: 'FieldNode', value: 'endDate' },
-      },
-      {
-        input: { rate: { gte: 23 } },
-        field: 'rate',
-        operator: '>=',
-        right: { kind: 'LiteralNode', value: 23 },
-      },
-      {
-        input: { name: { lte: 'another day in paradise' } },
-        field: 'name',
-        operator: '<=',
-        right: { kind: 'LiteralNode', value: 'another day in paradise' },
-      },
-      {
-        input: { field: { eq: '$field2' } },
-        field: 'field',
-        operator: '==',
-        right: { kind: 'FieldNode', value: 'field2' },
-      },
-      {
-        input: {
-          phoneNumbers: { equals: ['+56 30000000', '+51 70000000'] },
-        },
-        field: 'phoneNumbers',
-        operator: '==',
-        right: {
-          kind: 'ArrayNode',
-          items: [
-            {
-              kind: 'LiteralNode',
-              value: '+56 30000000',
+    describe.concurrent.for(['eq', 'equals', 'diff', 'ne'])(
+      'when using the equality operator %s',
+      (operator) => {
+        it.for([
+          ...fieldAndLiteralToTest,
+          { input: [], node: { kind: 'ArrayNode', items: [] } },
+          {
+            input: [23],
+            node: {
+              kind: 'ArrayNode',
+              items: [{ kind: 'LiteralNode', value: 23 }],
             },
-            {
-              kind: 'LiteralNode',
-              value: '+51 70000000',
-            },
-          ],
-        },
-      },
-
-      {
-        input: { username: { equals: 'jaax' } },
-        field: 'username',
-        operator: '==',
-        right: { kind: 'LiteralNode', value: 'jaax' },
-      },
-      {
-        input: { username: { diff: 'pomni' } },
-        field: 'username',
-        operator: '!=',
-        right: { kind: 'LiteralNode', value: 'pomni' },
-      },
-      {
-        input: { username: { ne: 'pomni' } },
-        field: 'username',
-        operator: '!=',
-        right: { kind: 'LiteralNode', value: 'pomni' },
-      },
-      {
-        input: { points: { lt: 32.64 } },
-        field: 'points',
-        operator: '<',
-        right: { kind: 'LiteralNode', value: 32.64 },
-      },
-      {
-        input: { points: { gt: 32.64 } },
-        field: 'points',
-        operator: '>',
-        right: { kind: 'LiteralNode', value: 32.64 },
-      },
-    ])(
-      'should parse comparison with operator $operator for field $field',
-      ({ input, field, operator, right }) => {
-        const result = FilterParser.parse(input);
-        expect(result).toMatchObject({
-          kind: 'ComparisonNode',
-          left: { kind: 'FieldNode', value: field },
-          operator,
-          right,
+          },
+          { input: null, node: { kind: 'LiteralNode', value: null } },
+          { input: true, node: { kind: 'LiteralNode', value: true } },
+          { input: false, node: { kind: 'LiteralNode', value: false } },
+        ])('should parse $input as a ComparisonNode', ({ input, node }) => {
+          expect(
+            FilterParser.parse({ field: { [operator]: input } } as any),
+          ).toMatchObject({
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'field' },
+            operator: mapComparisonOperator[operator],
+            right: node,
+          });
         });
       },
     );
@@ -371,115 +378,147 @@ describe('FilterParser', () => {
       undefined,
       null,
       new Date(),
-    ])(
-      'should throw InvalidExpression when not expression receive %s',
-      (expression) => {
-        expect(() => FilterParser.parse({ not: expression } as any)).toThrow(
-          InvalidExpression,
-        );
-      },
-    );
+      new Map(),
+      new Set(),
+      new Error(),
+    ])('should throw InvalidExpression when not wraps %s', (expression) => {
+      expect(() => FilterParser.parse({ not: expression } as any)).toThrow(
+        InvalidExpression,
+      );
+    });
 
-    it('should parse a valid not expression wrapping a comparison', () => {
-      const expression: Expression = {
-        not: { status: { equals: 'inactive' } },
-      };
-
-      const result = FilterParser.parse(expression);
-
-      expect(result).toMatchObject({
-        kind: 'NotNode',
-        expression: {
+    it.for([
+      {
+        expression: { status: { equals: 'inactive' } },
+        node: {
           kind: 'ComparisonNode',
           left: { kind: 'FieldNode', value: 'status' },
           operator: '==',
           right: { kind: 'LiteralNode', value: 'inactive' },
         },
-      });
-    });
-
-    it('should parse a valid not expression wrapping a between expression', () => {
-      const expression: Expression = {
-        not: { limit: { between: [0, 100] } },
-      };
-
-      const result = FilterParser.parse(expression);
-
-      expect(result).toMatchObject({
-        kind: 'NotNode',
-        expression: {
+      },
+      {
+        expression: { status: { in: ['active', 'inactive'] } },
+        node: {
+          kind: 'InNode',
+          value: { kind: 'FieldNode', value: 'status' },
+          arrayExpression: {
+            kind: 'ArrayNode',
+            items: [
+              { kind: 'LiteralNode', value: 'active' },
+              { kind: 'LiteralNode', value: 'inactive' },
+            ],
+          },
+        },
+      },
+      {
+        expression: { not: { field: { equals: 'inactive' } } },
+        node: {
+          kind: 'NotNode',
+          expression: {
+            kind: 'ComparisonNode',
+            left: { kind: 'FieldNode', value: 'field' },
+            operator: '==',
+            right: { kind: 'LiteralNode', value: 'inactive' },
+          },
+        },
+      },
+      {
+        expression: { limit: { between: [0, 100] } },
+        node: {
           kind: 'BetweenNode',
           value: { kind: 'FieldNode', value: 'limit' },
           start: { kind: 'LiteralNode', value: 0 },
           end: { kind: 'LiteralNode', value: 100 },
         },
-      });
-    });
+      },
+      {
+        expression: { limit: { isNull: true } },
+        node: {
+          kind: 'IsNullNode',
+          isNull: true,
+          value: { kind: 'FieldNode', value: 'limit' },
+        },
+      },
+      {
+        expression: '$field',
+        node: {
+          kind: 'FieldNode',
+          value: 'field',
+        },
+      },
+      {
+        expression: { and: ['$field1', '$field2'] },
+        node: {
+          kind: 'LogicalNode',
+          operator: '&&',
+          expressions: [
+            {
+              kind: 'FieldNode',
+              value: 'field1',
+            },
+            {
+              kind: 'FieldNode',
+              value: 'field2',
+            },
+          ],
+        },
+      },
+    ])(
+      'should parse not wrapping $expression as a NotNode',
+      ({ expression, node }) => {
+        expect(FilterParser.parse({ not: expression } as any)).toMatchObject({
+          kind: 'NotNode',
+          expression: node,
+        });
+      },
+    );
   });
 
   describe('in expressions', () => {
-    it.for([
-      { role: { in: [] } },
-      { in: [() => {}, null] },
-      { role: { in: [{ and: [true, true] }] } },
-      { in: [{ and: [true, true] }, [1, 2]] },
-      { some: { in: [1, [1, 2, 1, 1, {}]] } },
-      { some: { in: [() => {}, { user: 'daaa' }] } },
-    ])(
-      'should throw InvalidExpression when in expression is %s',
-      (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
-          InvalidExpression,
-        );
+    describe.for(['in', 'nin'])(
+      'when using %s with an invalid operand',
+      (operator) => {
+        it.for([
+          1,
+          0,
+          -23,
+          true,
+          false,
+          null,
+          undefined,
+          () => {},
+          new Date(),
+          new Set(),
+          new Map(),
+          [],
+          [undefined],
+          [() => {}, null],
+          [1, [1, 2, 1, 1, {}]],
+        ])('should throw InvalidExpression for %s', (input) => {
+          expect(() =>
+            FilterParser.parse({ field: { [operator]: input } } as any),
+          ).toThrow(InvalidExpression);
+        });
       },
     );
 
-    it('should parse a valid in expression with nin abreviation to negate in expression', () => {
-      const expression: Expression = {
-        cat: { nin: ['dog', 'cat'] },
-      };
-
-      const resultParse = FilterParser.parse(expression);
-      expect(resultParse).toMatchObject({
-        kind: 'NotNode',
-        expression: {
-          kind: 'InNode',
-          value: {
-            kind: 'FieldNode',
-            value: 'cat',
-          },
+    const toTest = [
+      {
+        expression: [1, 2, 3, '$field'],
+        node: {
+          kind: 'ArrayNode',
+          items: [
+            { kind: 'LiteralNode', value: 1 },
+            { kind: 'LiteralNode', value: 2 },
+            { kind: 'LiteralNode', value: 3 },
+            { kind: 'FieldNode', value: 'field' },
+          ],
         },
-      });
-    });
-
-    it('should parse a valid in expression with a field and literal list', () => {
-      const expression: Expression = {
-        cat: { in: ['dog', 'cat'] },
-      };
-
-      const resultParse = FilterParser.parse(expression);
-      expect(resultParse).toMatchObject({
-        kind: 'InNode',
-        value: {
-          kind: 'FieldNode',
-          value: 'cat',
-        },
-      });
-    });
-
-    it('should parse a valid in expression containing nested array and field expressions', () => {
-      const expression: Expression = {
-        cat: { in: ['dog', '$animal', ['$dog', ['duck']]] },
-      };
-
-      const resultParse = FilterParser.parse(expression);
-      expect(resultParse).toMatchObject({
-        kind: 'InNode',
-        value: {
-          kind: 'FieldNode',
-          value: 'cat',
-        },
-        arrayExpression: {
+      },
+      {
+        expression: ['dog', '$animal', ['$dog', ['duck']]],
+        node: {
           kind: 'ArrayNode',
           items: [
             { kind: 'LiteralNode', value: 'dog' },
@@ -501,8 +540,36 @@ describe('FilterParser', () => {
             },
           ],
         },
-      });
-    });
+      },
+    ];
+
+    describe.for(toTest)(
+      'when using the membership list $expression',
+      ({ expression, node }) => {
+        it('should parse in as an InNode', () => {
+          const resultParse = FilterParser.parse({
+            field: { in: expression },
+          });
+          expect(resultParse).toMatchObject({
+            kind: 'InNode',
+            arrayExpression: node,
+          });
+        });
+
+        it('should parse nin as a NotNode wrapping an InNode', () => {
+          const resultParse = FilterParser.parse({
+            field: { nin: expression },
+          });
+          expect(resultParse).toMatchObject({
+            kind: 'NotNode',
+            expression: {
+              kind: 'InNode',
+              arrayExpression: node,
+            },
+          });
+        });
+      },
+    );
   });
 
   describe('field identifier expressions', () => {
@@ -586,23 +653,18 @@ describe('FilterParser', () => {
   });
 
   describe('IsNull expression', () => {
-    it.for([
-      {
-        input: { infinite: { isNull: true } },
-        field: 'infinite',
-        isNull: true,
-      },
-      { input: { fear: { isNull: false } }, field: 'fear', isNull: false },
-    ])(
-      'should parse isNull expression for field $field with isNull=$isNull',
-      ({ input, field, isNull }) => {
-        expect(FilterParser.parse(input)).toMatchObject({
+    it.for([true, false])(
+      'should parse isNull with %s as an IsNullNode',
+      (input) => {
+        expect(
+          FilterParser.parse({ fear: { isNull: input } } as any),
+        ).toMatchObject({
           kind: 'IsNullNode',
-          isNull,
           value: {
             kind: 'FieldNode',
-            value: field,
+            value: 'fear',
           },
+          isNull: input,
         });
       },
     );
@@ -619,17 +681,25 @@ describe('FilterParser', () => {
       });
     });
     it.for([
-      { love: { isNull: 1 } },
-      { feelings: { isNull: 'true' } },
-      { hate: { isNull: () => {} } },
-      { blame: { isNull: null } },
-      { money: { isNull: undefined } },
+      1,
+      0,
+      -43,
+      'true',
+      'false',
+      () => {},
+      null,
+      undefined,
+      [],
+      new Date(),
+      new Map(),
+      new Set(),
+      new Error(),
     ])(
-      'should throw InvalidExpression when isNull receives non-boolean in %s',
+      'should throw InvalidExpression when isNull receives %s',
       (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
-          InvalidExpression,
-        );
+        expect(() =>
+          FilterParser.parse({ field: { isNull: expression } } as any),
+        ).toThrow(InvalidExpression);
       },
     );
   });
@@ -655,7 +725,7 @@ describe('FilterParser', () => {
         end: { kind: 'FieldNode', value: 'max_score' },
       },
     ])(
-      'should parse between expression for field $field',
+      'should parse $input as a BetweenNode',
       ({ input, field, start, end }) => {
         expect(FilterParser.parse(input as any)).toMatchObject({
           kind: 'BetweenNode',
@@ -667,27 +737,30 @@ describe('FilterParser', () => {
     );
 
     it.for([
-      { age: { between: null } },
-      { age: { between: [{}, () => {}] } },
-      { age: { between: [true, () => {}] } },
-      { age: { between: [undefined, undefined] } },
-      { age: { between: [] } },
-      { age: { between: [1] } },
-      {
-        date: { between: [new Date('1999-01-01'), new Date('2020-01-01')] },
-      },
-      {
-        between: [{ not: { result: { equals: 'fail' } } }, 1],
-      },
-      {
-        date: { between: [3, [1, 2, 3, 4]] },
-      },
+      null,
+      undefined,
+      [{}],
+      [{}, {}],
+      [undefined, undefined],
+      [{}, () => {}],
+      [true, () => {}],
+      [undefined, undefined],
+      [],
+      [1],
+      [new Date('1999-01-01'), new Date('2020-01-01')],
+      [1, new Date('2020-01-01')],
+      [3, [1, 2, 3, 4]],
+      [3, 1, 2, 3, 4],
+      new Date(),
+      new Map(),
+      new Set(),
+      new Error(),
     ])(
-      'should throw InvalidExpression when between expression is %s',
+      'should throw InvalidExpression when between receives %s',
       (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
-          InvalidExpression,
-        );
+        expect(() =>
+          FilterParser.parse({ field: { between: expression } } as any),
+        ).toThrow(InvalidExpression);
       },
     );
   });

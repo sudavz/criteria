@@ -14,6 +14,8 @@ describe('Pagination', () => {
       0,
       -234,
       -1,
+      '1',
+      '2',
       23.12,
       Infinity,
       -Infinity,
@@ -45,12 +47,18 @@ describe('Pagination', () => {
 
   describe('by cursor', () => {
     it.for([
+      null,
+      undefined,
+      true,
+      false,
+      1,
+      0,
+      '1',
       [[null, null, 'a']],
       [null, {}],
       [{}],
       [],
-      null,
-      undefined,
+
       [[1, 1, 'DESC']],
       [[true, false, 'DESC']],
       [['', false, 'DESC']],
