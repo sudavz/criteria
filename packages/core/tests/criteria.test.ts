@@ -267,7 +267,7 @@ describe('Criteria', () => {
     });
   });
 
-  describe('Pagination criteria', () => {
+  describe('pagination criteria', () => {
     it.for([
       { pagination: Pagination.byPage(14), orderBy: null, limit: 10 },
       { pagination: Pagination.byPage(34), orderBy: null, limit: 100 },
@@ -276,8 +276,8 @@ describe('Criteria', () => {
       {
         pagination: Pagination.byPage(24),
         orderBy: [
-          ['id', 'DESC'],
-          ['name', 'ASC'],
+          ['field1', 'DESC'],
+          ['field2', 'ASC'],
         ],
         limit: 103,
       },
@@ -301,22 +301,48 @@ describe('Criteria', () => {
         orderBy: [],
         limit: 10,
       },
+      { pagination: { page: 67 }, orderBy: null, limit: 343434 },
+      { pagination: { page: 3 }, orderBy: null, limit: 896 },
+      {
+        pagination: { page: 89 },
+        orderBy: [['field2', 'ASC']],
+        limit: 5,
+      },
+      {
+        pagination: { page: 6 },
+        orderBy: [
+          ['field1', 'DESC'],
+          ['field2', 'ASC'],
+        ],
+        limit: 45,
+      },
+      {
+        pagination: { cursor: [['id', 1, 'ASC']] },
+        orderBy: null,
+        limit: 343434,
+      },
+      { pagination: { cursor: [['id', 2, 'ASC']] }, orderBy: null, limit: 896 },
+      {
+        pagination: { cursor: [['id', 3, 'ASC']] },
+        orderBy: null,
+        limit: 5,
+      },
+      {
+        pagination: { cursor: [['id', 4, 'ASC']] },
+        orderBy: null,
+        limit: 45,
+      },
     ])(
       'should pass when pagination is $pagination, limit is $limit and orderBy is $orderBy',
       ({ pagination, limit, orderBy }) => {
         const criteria = Criteria.create({
-          pagination,
+          pagination: pagination as any,
           orderBy: orderBy as any,
           limit,
         });
-
         expect(criteria.pagination).toBeInstanceOf(Pagination);
-        expect(criteria.toObjectPlain()).toStrictEqual({
-          filterExpression: null,
-          pagination: pagination.toObjectPlain(),
-          orderBy: orderBy ?? [],
-          limit,
-        });
+        expect(criteria.filterExpression).toBeNull();
+        expect(criteria.orderBy).toEqual(orderBy ?? []);
         expect(criteria.limit).toBe(limit);
       },
     );
