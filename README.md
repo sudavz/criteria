@@ -182,19 +182,19 @@ const criteria = Criteria.create({
 
 ### Pagination
 
-You can configure result pagination using either page-number or cursor-based strategies. Instantiate a `Pagination` object using the static factory methods `Pagination.byPage` or `Pagination.byCursor` depending on your strategy:
+To paginate results, pass a plain object with either `page` or `cursor`. You can also pass a `Pagination` instance created with `Pagination.byPage` or `Pagination.byCursor`.
 
 #### Using Page Number
 
 ```typescript
-import { Criteria, Pagination } from '@criteria-ts/core';
+import { Criteria } from '@criteria-ts/core';
 
 const criteria = Criteria.create({
   filter: {
     programmingLanguage: { in: ['C', 'Lisp'] },
     age: { gte: 18 },
   },
-  pagination: Pagination.byPage(3),
+  pagination: { page: 3 },
   orderBy: {
     age: 'ASC',
     id: 'DESC',
@@ -207,14 +207,14 @@ const criteria = Criteria.create({
 
 #### Using Cursor
 
-When using cursor-based pagination, `Pagination` relies on the `CursorPayload` type, which represents a list of field criteria with values and sort orders.
+A `CursorPayload` is a list of criteria. Each criterion contains a field name, a value, and a sort direction.
 
-`Pagination` validates and stores your cursor criteria. To use them in a query, translate them into conditions and apply their sort order in your query adapter.
+To use them in a query, translate them into conditions and apply their sort order in your query adapter.
 
 `Criteria.create` throws `InvalidPagination` if cursor pagination is combined with a non-empty `orderBy`. Omit `orderBy` or pass an empty collection.
 
 ```typescript
-import { Criteria, Pagination, type CursorPayload } from '@criteria-ts/core';
+import { Criteria, type CursorPayload } from '@criteria-ts/core';
 
 const cursor: CursorPayload = [
   ['isPinned', true, 'DESC'],
@@ -229,7 +229,7 @@ const postsCriteria = Criteria.create({
     topic: { in: ['programming', 'free-software'] },
     deletedAt: { isNull: true },
   },
-  pagination: Pagination.byCursor(cursor),
+  pagination: { cursor },
   limit: 30,
 });
 ```
