@@ -7,7 +7,7 @@ import {
   DefaultExpressionType,
   ExpressionWithBooleanReturn,
 } from './filter/grammar.js';
-import Pagination from './pagination.js';
+import Pagination, { PaginationFromOptions } from './pagination.js';
 
 type OrderBy = Map<string, Sort>;
 
@@ -30,7 +30,7 @@ export interface CriteriaOptions<
    * Pagination requires a limit. Cursor pagination uses the sort order in the
    * cursor. Combining it with a non-empty `orderBy` throws `InvalidPagination`.
    */
-  pagination?: Pagination | null;
+  pagination?: Pagination | PaginationFromOptions | null;
   /**
    * Sorts by the listed fields, in priority order.
    *
@@ -55,16 +55,21 @@ export class Criteria<
   T extends DefaultExpressionType<T> = DefaultExpressionType,
 > {
   private orderBy_: OrderBy;
+  private pagination_: Pagination | null;
 
   private constructor(
     private filterExpression_: ExpressionNode | null,
-    private pagination_: Pagination | null,
+    pagination: Pagination | PaginationFromOptions | null,
     orderBy: OrderByRaw<T> | null,
     private limit_: number | null,
   ) {
     this.validateLimit(limit_);
     this.orderBy_ = this.validateOrderBy(orderBy);
-    this.validatePaginationIntegrity(pagination_, limit_, this.orderBy_);
+    this.pagination_ = this.validatePaginationIntegrity(
+      pagination,
+      limit_,
+      this.orderBy_,
+    );
     Object.freeze(this);
   }
 
@@ -140,28 +145,30 @@ export class Criteria<
   }
 
   private validatePaginationIntegrity(
-    pagination: Pagination | null,
+    pagination: Pagination | PaginationFromOptions | null,
     limit: number | null,
     orderBy: OrderBy,
-  ) {
-    if (pagination !== null && !(pagination instanceof Pagination)) {
-      throw new InvalidPagination(
-        'The pagination must be an object of the type Pagination',
-        pagination,
-      );
+  ): Pagination | null {
+    let validPagination;
+
+    if (pagination instanceof Pagination || pagination === null) {
+      validPagination = pagination;
+    } else {
+      validPagination = Pagination.fromOptions(pagination);
     }
 
-    if (pagination !== null && !Number.isInteger(limit)) {
+    if (validPagination !== null && !Number.isInteger(limit)) {
       throw new InvalidPagination(
         'To apply pagination you must provide a limit',
       );
     }
 
-    if (pagination?.kind === 'Cursor' && orderBy.size > 0) {
+    if (validPagination?.kind === 'Cursor' && orderBy.size > 0) {
       throw new InvalidPagination(
         'Cursor pagination cannot be combined with a non-empty orderBy',
       );
     }
+    return validPagination;
   }
 
   private validateLimit(limit: number | null) {
