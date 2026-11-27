@@ -1,0 +1,40 @@
+{
+  "name": "@criteria-ts/postgres-adapter",
+  "version": "0.1.0-alpha.0",
+  "description": "Adapter to translate from Criteria to PostgresSql",
+  "scripts": {
+    "build:check": "tsc --noEmit",
+    "build:prod": "tsc",
+    "test": "vitest run --config ../../../vitest.test.config.mjs",
+    "test:coverage": "vitest run --coverage --config ../../../vitest.test.config.mjs",
+    "format": "prettier --write --config ../../../.prettierrc .",
+    "lint": "eslint --config ../../../eslint.config.mjs"
+  },
+  "files": [
+    "lib",
+    "LICENSE",
+    "README"
+  ],
+  "types": "./lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "keywords": [
+    "sql",
+    "query",
+    "postgres",
+    "criteria",
+    "adapter",
+    "criteria-ts"
+  ],
+  "type": "module",
+  "private": false,
+  "peerDependencies": {
+    "@criteria-ts/core": "^0.1.0-alpha.14"
+  },
+  "devDependencies": {
+    "@criteria-ts/core": "^0.1.0-alpha.14",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1"
+  }
+}
