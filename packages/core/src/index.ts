@@ -1,9 +1,5 @@
-import {
-  Criteria,
-  type CriteriaOptions,
-  type OrderByRaw,
-  type Sort,
-} from './criteria.js';
+import { Criteria, type CriteriaOptions } from './criteria.js';
+import { type OrderByRaw, type Sort } from './order-by.js';
 import CriteriaError from './exceptions/criteria-error.js';
 import InvalidCursorPayload from './exceptions/invalid-cursor-payload.js';
 import InvalidExpression from './exceptions/invalid-expression.js';
