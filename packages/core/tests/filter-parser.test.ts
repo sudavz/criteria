@@ -1,4 +1,4 @@
-import * as FilterParser from '../src/filter/filter-parser';
+import filterParser from '../src/filter/filter-parser';
 import { Expression } from '../src/filter/grammar';
 import InvalidExpression from '../src/exceptions/invalid-expression';
 import { describe, expect, it, test } from 'vitest';
@@ -6,7 +6,7 @@ import { describe, expect, it, test } from 'vitest';
 describe('FilterParser', () => {
   describe('general expressions', () => {
     it('should parse valid logical and comparison expressions', () => {
-      const parserResult = FilterParser.parse({
+      const parserResult = filterParser({
         and: [{ username: { diff: 'jazzz' } }, { age: { lte: '$parentAage' } }],
       });
 
@@ -34,7 +34,7 @@ describe('FilterParser', () => {
       const badExpression = {
         wrongKey: [1, 2],
       };
-      expect(() => FilterParser.parse(badExpression as any)).toThrow(
+      expect(() => filterParser(badExpression as any)).toThrow(
         InvalidExpression,
       );
     });
@@ -55,16 +55,16 @@ describe('FilterParser', () => {
       }; // Depth recursion is 5
 
       expect(() =>
-        FilterParser.parse(expression, { maxRecursionGrammarDepth: 3 }),
+        filterParser(expression, { maxRecursionGrammarDepth: 3 }),
       ).toThrow(InvalidExpression);
       expect(() =>
-        FilterParser.parse(expression, { maxRecursionGrammarDepth: 4 }),
+        filterParser(expression, { maxRecursionGrammarDepth: 4 }),
       ).toThrow(InvalidExpression);
       expect(
-        FilterParser.parse(expression, { maxRecursionGrammarDepth: 5 }),
+        filterParser(expression, { maxRecursionGrammarDepth: 5 }),
       ).toMatchObject({ kind: 'LogicalNode' });
       expect(
-        FilterParser.parse(expression, { maxRecursionGrammarDepth: 6 }),
+        filterParser(expression, { maxRecursionGrammarDepth: 6 }),
       ).toMatchObject({ kind: 'LogicalNode' });
     });
   });
@@ -73,7 +73,7 @@ describe('FilterParser', () => {
     it.for([null, 123, true, false, "somebody's watching me"])(
       'should parse %s as a LiteralNode',
       (input) => {
-        expect(FilterParser.parse(input)).toMatchObject({
+        expect(filterParser(input)).toMatchObject({
           kind: 'LiteralNode',
           value: input,
         });
@@ -83,9 +83,7 @@ describe('FilterParser', () => {
 
   describe('Array expressions', () => {
     it('should parse a valid ArrayExpression', () => {
-      expect(
-        FilterParser.parse([1, 2, 3, 4, '5', '$nextNumber']),
-      ).toMatchObject({
+      expect(filterParser([1, 2, 3, 4, '5', '$nextNumber'])).toMatchObject({
         kind: 'ArrayNode',
         items: [
           { kind: 'LiteralNode', value: 1 },
@@ -96,7 +94,7 @@ describe('FilterParser', () => {
           { kind: 'FieldNode', value: 'nextNumber' },
         ],
       });
-      expect(FilterParser.parse([-1, true])).toMatchObject({
+      expect(filterParser([-1, true])).toMatchObject({
         kind: 'ArrayNode',
         items: [
           { kind: 'LiteralNode', value: -1 },
@@ -116,7 +114,7 @@ describe('FilterParser', () => {
     ])(
       'should throw InvalidExpression when array contains %s',
       (expression) => {
-        expect(() => FilterParser.parse(expression as any)).toThrow(
+        expect(() => filterParser(expression as any)).toThrow(
           InvalidExpression,
         );
       },
@@ -143,7 +141,7 @@ describe('FilterParser', () => {
         ])(
           'should throw InvalidExpression when logical expression is %s',
           (input) => {
-            expect(() => FilterParser.parse({ [operator]: input })).toThrow(
+            expect(() => filterParser({ [operator]: input })).toThrow(
               InvalidExpression,
             );
           },
@@ -190,7 +188,7 @@ describe('FilterParser', () => {
     test.for(['and', 'or'])(
       'should pass when "%s" is used and ',
       (operator) => {
-        const result = FilterParser.parse({
+        const result = filterParser({
           [operator]: expressionTest.map((i) => i.expr),
         });
         expect(result).toMatchObject({
@@ -203,7 +201,7 @@ describe('FilterParser', () => {
 
     test('should pass and parse in LogicalExpression (and) when input has multiple keys', () => {
       expect(
-        FilterParser.parse({
+        filterParser({
           ...expressionTest[0].expr,
           ...expressionTest[1].expr,
           ...expressionTest[2].expr,
@@ -219,7 +217,7 @@ describe('FilterParser', () => {
       const exp = {
         field: { eq: 1, lt: 2, gt: 3 },
       };
-      expect(FilterParser.parse(exp)).toMatchObject({
+      expect(filterParser(exp)).toMatchObject({
         kind: 'LogicalNode',
         operator: '&&',
         expressions: [
@@ -273,7 +271,7 @@ describe('FilterParser', () => {
           new Error(),
         ])('should throw InvalidExpression for %s', (input) => {
           expect(() =>
-            FilterParser.parse({ field: { [operator]: input } } as any),
+            filterParser({ field: { [operator]: input } } as any),
           ).toThrow(InvalidExpression);
         });
       },
@@ -313,7 +311,7 @@ describe('FilterParser', () => {
           'should throw InvalidExpression for %s',
           (input) => {
             expect(() =>
-              FilterParser.parse({ field: { [operator]: input } } as any),
+              filterParser({ field: { [operator]: input } } as any),
             ).toThrow(InvalidExpression);
           },
         );
@@ -322,7 +320,7 @@ describe('FilterParser', () => {
           'should parse $input as a ComparisonNode',
           ({ input, node }) => {
             expect(
-              FilterParser.parse({ field: { [operator]: input } } as any),
+              filterParser({ field: { [operator]: input } } as any),
             ).toMatchObject({
               kind: 'ComparisonNode',
               left: { kind: 'FieldNode', value: 'field' },
@@ -352,7 +350,7 @@ describe('FilterParser', () => {
           { input: false, node: { kind: 'LiteralNode', value: false } },
         ])('should parse $input as a ComparisonNode', ({ input, node }) => {
           expect(
-            FilterParser.parse({ field: { [operator]: input } } as any),
+            filterParser({ field: { [operator]: input } } as any),
           ).toMatchObject({
             kind: 'ComparisonNode',
             left: { kind: 'FieldNode', value: 'field' },
@@ -382,7 +380,7 @@ describe('FilterParser', () => {
       new Set(),
       new Error(),
     ])('should throw InvalidExpression when not wraps %s', (expression) => {
-      expect(() => FilterParser.parse({ not: expression } as any)).toThrow(
+      expect(() => filterParser({ not: expression } as any)).toThrow(
         InvalidExpression,
       );
     });
@@ -467,7 +465,7 @@ describe('FilterParser', () => {
     ])(
       'should parse not wrapping $expression as a NotNode',
       ({ expression, node }) => {
-        expect(FilterParser.parse({ not: expression } as any)).toMatchObject({
+        expect(filterParser({ not: expression } as any)).toMatchObject({
           kind: 'NotNode',
           expression: node,
         });
@@ -497,7 +495,7 @@ describe('FilterParser', () => {
           [1, [1, 2, 1, 1, {}]],
         ])('should throw InvalidExpression for %s', (input) => {
           expect(() =>
-            FilterParser.parse({ field: { [operator]: input } } as any),
+            filterParser({ field: { [operator]: input } } as any),
           ).toThrow(InvalidExpression);
         });
       },
@@ -547,7 +545,7 @@ describe('FilterParser', () => {
       'when using the membership list $expression',
       ({ expression, node }) => {
         it('should parse in as an InNode', () => {
-          const resultParse = FilterParser.parse({
+          const resultParse = filterParser({
             field: { in: expression },
           });
           expect(resultParse).toMatchObject({
@@ -557,7 +555,7 @@ describe('FilterParser', () => {
         });
 
         it('should parse nin as a NotNode wrapping an InNode', () => {
-          const resultParse = FilterParser.parse({
+          const resultParse = filterParser({
             field: { nin: expression },
           });
           expect(resultParse).toMatchObject({
@@ -621,7 +619,7 @@ describe('FilterParser', () => {
         expected: { kind: 'FieldNode', value: 'field1.field2.field_3' },
       },
     ])('should parse a valid field with $input', ({ input, expected }) => {
-      const resultParse = FilterParser.parse(input as any);
+      const resultParse = filterParser(input as any);
       expect(resultParse).toMatchObject(expected);
     });
 
@@ -647,7 +645,7 @@ describe('FilterParser', () => {
     ])(
       'should throw InvalidExpression when field identifier is %s',
       (expression) => {
-        expect(() => FilterParser.parse(expression)).toThrow(InvalidExpression);
+        expect(() => filterParser(expression)).toThrow(InvalidExpression);
       },
     );
   });
@@ -656,9 +654,7 @@ describe('FilterParser', () => {
     it.for([true, false])(
       'should parse isNull with %s as an IsNullNode',
       (input) => {
-        expect(
-          FilterParser.parse({ fear: { isNull: input } } as any),
-        ).toMatchObject({
+        expect(filterParser({ fear: { isNull: input } } as any)).toMatchObject({
           kind: 'IsNullNode',
           value: {
             kind: 'FieldNode',
@@ -669,9 +665,7 @@ describe('FilterParser', () => {
       },
     );
     it('should parse a not expression wrapping an isNull expression', () => {
-      expect(
-        FilterParser.parse({ not: { email: { isNull: true } } }),
-      ).toMatchObject({
+      expect(filterParser({ not: { email: { isNull: true } } })).toMatchObject({
         kind: 'NotNode',
         expression: {
           kind: 'IsNullNode',
@@ -698,7 +692,7 @@ describe('FilterParser', () => {
       'should throw InvalidExpression when isNull receives %s',
       (expression) => {
         expect(() =>
-          FilterParser.parse({ field: { isNull: expression } } as any),
+          filterParser({ field: { isNull: expression } } as any),
         ).toThrow(InvalidExpression);
       },
     );
@@ -727,7 +721,7 @@ describe('FilterParser', () => {
     ])(
       'should parse $input as a BetweenNode',
       ({ input, field, start, end }) => {
-        expect(FilterParser.parse(input as any)).toMatchObject({
+        expect(filterParser(input as any)).toMatchObject({
           kind: 'BetweenNode',
           value: { kind: 'FieldNode', value: field },
           start,
@@ -759,7 +753,7 @@ describe('FilterParser', () => {
       'should throw InvalidExpression when between receives %s',
       (expression) => {
         expect(() =>
-          FilterParser.parse({ field: { between: expression } } as any),
+          filterParser({ field: { between: expression } } as any),
         ).toThrow(InvalidExpression);
       },
     );

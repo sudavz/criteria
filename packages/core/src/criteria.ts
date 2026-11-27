@@ -2,7 +2,7 @@ import InvalidLimit from './exceptions/invalid-limit.js';
 import InvalidOrderBy from './exceptions/invalid-orderby.js';
 import InvalidPagination from './exceptions/invalid-pagination.js';
 import { ExpressionNode } from './filter/ast.js';
-import * as FilterParser from './filter/filter-parser.js';
+import filterParser, { fieldNameRegex } from './filter/filter-parser.js';
 import {
   DefaultExpressionType,
   ExpressionWithBooleanReturn,
@@ -78,7 +78,7 @@ export class Criteria<
   ) {
     const { filter, limit, orderBy, pagination } = criteriaOptions;
 
-    const filterExpression = filter ? FilterParser.parse(filter) : null;
+    const filterExpression = filter ? filterParser(filter) : null;
 
     const criteria = new Criteria<T>(
       filterExpression,
@@ -126,10 +126,7 @@ export class Criteria<
       if (sort !== 'DESC' && sort !== 'ASC') {
         throw new InvalidOrderBy('The sort value must be ASC or DESC', sort);
       }
-      if (
-        typeof field !== 'string' ||
-        !FilterParser.fieldNameRegex.test(field)
-      ) {
+      if (typeof field !== 'string' || !fieldNameRegex.test(field)) {
         throw new InvalidOrderBy(
           'The field order must be a string valid',
           field,
