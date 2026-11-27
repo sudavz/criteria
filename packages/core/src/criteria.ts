@@ -117,16 +117,16 @@ export class Criteria<
     return this.orderBy_.value;
   }
 
-  get limit(): Readonly<number | null> {
+  get limit(): number | null {
     return this.limit_;
   }
 
-  get pagination(): Readonly<Pagination | null> {
-    return Object.freeze(this.pagination_);
+  get pagination(): Pagination | null {
+    return this.pagination_;
   }
 
-  get filterExpression(): Readonly<ExpressionNode | null> {
-    return Object.freeze(this.filterExpression_);
+  get filterExpression(): ExpressionNode | null {
+    return this.filterExpression_;
   }
 
   toObjectPlain() {
