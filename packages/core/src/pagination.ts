@@ -114,7 +114,7 @@ export default class Pagination {
     return Object.freeze(finalPayload);
   }
 
-  get page(): Readonly<number | null> {
+  get page(): number | null {
     return this.page_;
   }
 
