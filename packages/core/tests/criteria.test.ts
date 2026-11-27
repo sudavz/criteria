@@ -154,6 +154,7 @@ describe('Criteria', () => {
 
   describe('orderBy criteria', () => {
     it.for([
+      { orderBy: null, expected: [] },
       { orderBy: [] as any[], expected: [] },
       {
         orderBy: new Map([]),
